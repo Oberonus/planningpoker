@@ -7,6 +7,7 @@ export default class {
     workerID;
 
     id;
+    State;
     Cards;
     Players;
     VotedCard;
@@ -47,10 +48,12 @@ export default class {
 
     async reveal() {
         await game.reveal(this.id)
+        await this.update()
     }
 
     async restart() {
         await game.restart(this.id)
+        await this.update()
     }
 
     async vote(card) {
@@ -68,7 +71,7 @@ export default class {
 
     updatePeriodically() {
         this.workerID = setInterval(async () => {
-            await this.update()
+            await this.updatePlayers()
         }, 500)
     }
 
@@ -82,6 +85,17 @@ export default class {
             this[attribute] = state[attribute];
         }
         this.Players && this.Players.sort(comparePlayers)
+    }
+
+    async updatePlayers() {
+        const state = await game.state(this.id)
+        this.State = state.State
+        this.CanReveal = state.CanReveal
+        this.Players = state.Players
+        this.Players && this.Players.sort(comparePlayers)
+        if (this.State === stateFinished) {
+            this.VotedCard = ""
+        }
     }
 }
 

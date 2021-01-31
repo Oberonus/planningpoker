@@ -86,6 +86,7 @@ export default {
       const gameID = this.$route.params.id
       await game.join(gameID)
       this.state = new State(gameID)
+      await this.state.update()
     } catch (e) {
       console.log(e)
       await this.$router.push({name: 'Home'})
