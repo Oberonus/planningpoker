@@ -31,13 +31,22 @@
       <div v-if="state.isRunning() && !state.canReveal()">Please pick your cards</div>
     </v-row>
 
-    <v-row align="center" justify="center" v-if="state" v-show="state.isRunning()" style="min-height: 100px;">
-      <Card v-for="card in state.cards()"
-            v-bind:key="card"
-            @click="state.vote(card)"
-            :active="state.isActive(card)"
-            :value="card">
-      </Card>
+    <v-row
+        align="center"
+        justify="center"
+        v-if="isRunning"
+    >
+      <v-col cols="1"
+             class="pa-2"
+             v-for="card in cards"
+             :key="card"
+             style="min-width: 4rem; max-width: 4.5rem"
+      >
+        <Card :value="card"
+              :active="state.isActive(card)"
+              @select="onSelectCard(card)"
+        />
+      </v-col>
     </v-row>
 
     <v-row align="center" justify="center" v-if="state" v-show="state.isFinished()" style="min-height: 100px;">
@@ -97,7 +106,23 @@ export default {
     this.state && this.state.stopUpdates()
   },
 
+  computed: {
+    cards() {
+      return this.state.cards() || [];
+    },
+
+    isRunning() {
+      return this.state && this.state.isRunning();
+    }
+  },
+
   methods: {
+
+    onSelectCard(card){
+      //TODO: animate playground card
+      this.state.vote(card);
+    },
+
     async changeName() {
       const name = await this.$refs.userNameDialog.openModify(user.name)
       if (name !== "") {
