@@ -6,14 +6,17 @@ export default {
         return resp.data.game_id
     },
 
-    async state(gameID) {
-        const resp = await axios.get(`games/${gameID}`)
-        return resp.data
+    state(gameID) {
+        return axios
+            .get(`games/${gameID}`)
+            .then(resp => resp.data);
     },
 
-    async join(gameID) {
-        const resp = await axios.post(`games/${gameID}/join`)
-        return resp.data
+    join(gameID) {
+        return axios.post(`games/${gameID}/join`)
+            .then((resp) => {
+                return resp.data;
+            })
     },
 
     async vote(gameID, vote) {

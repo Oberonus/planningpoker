@@ -1,22 +1,32 @@
 <template>
-  <v-dialog v-model="show" max-width="500px" persistent>
+  <v-dialog @keydown.enter.prevent="close(true)"
+            max-width="500px"
+            v-model="openDialog"
+            :persistent="!user.identified"
+  >
+    <template v-slot:activator="{ on, attrs }">
+      <v-btn icon v-on="on" v-bind="attrs">
+        <v-icon>mdi-account-edit</v-icon>
+      </v-btn>
+    </template>
+    
     <v-card>
       <v-card-title>
         <span class="headline">Choose your name</span>
       </v-card-title>
-      <v-divider></v-divider>
-      <v-card-text style="margin-top: 20px;">
-        <v-row>
-          <v-col cols="12">
-            <v-text-field v-model="name" label="Your display name" requred></v-text-field>
-          </v-col>
-        </v-row>
+      <v-divider/>
+      <v-card-text class="pt-4">
+        <v-text-field
+            ref="input"
+            v-model="name"
+            label="Your display name"
+        />
       </v-card-text>
-      <v-divider></v-divider>
+      <v-divider/>
       <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn color="primary" text @click="save" :disabled="name===''">OK</v-btn>
-        <v-btn v-if="mode===modeModify" color="primary" text @click="cancel">Cancel</v-btn>
+        <v-spacer/>
+        <v-btn color="primary" text @click="close(true)" :disabled="name===''">OK</v-btn>
+        <v-btn v-if="user.identified" color="primary" text @click="close(false)">Cancel</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -24,47 +34,50 @@
 
 <script>
 export default {
-  data: () => {
-    return {
-      modeCreate: 'create',
-      modeModify: 'modify',
-      mode: null,
-      show: false,
-      name: '',
-      resolve: null,
-    }
+  props: {
+    user: {
+      required: true,
+    },
+  },
+
+  data: () => ({
+    name: '',
+    dialog: false,
+  }),
+
+  mounted() {
+    this.onDialogOpen();
+  },
+
+  computed: {
+    openDialog: {
+      get: function() {
+        return !this.user.identified ? true : this.dialog;
+      },
+      set: function(value) {
+        this.dialog = value;
+        value && this.onDialogOpen();
+      }
+    },
   },
 
   methods: {
-    async open(name) {
-      this.mode = this.modeCreate
-      this.name = name
-      this.show = true
-
-      return new Promise((resolve) => {
-        this.resolve = resolve
-      })
+    onDialogOpen(){
+      this.name = this.user.name;
+      setTimeout(() => this.$refs.input && this.$refs.input.focus(), 0);
     },
 
-    async openModify(name) {
-      this.mode = this.modeModify
-      this.name = name
-      this.show = true
-
-      return new Promise((resolve) => {
-        this.resolve = resolve
-      })
-    },
-
-    save() {
-      this.show = false
-      this.resolve(this.name)
-    },
-
-    cancel() {
-      this.show = false
-      this.resolve("")
+    close(ok){
+      if (ok) {
+        if (this.user.identified){
+          this.user.name = this.name;
+        } else {
+          this.user.name = this.name;
+          this.user.authenticate();
+        }
+      }
+      this.dialog = false;
     }
-  },
+  }
 }
 </script>

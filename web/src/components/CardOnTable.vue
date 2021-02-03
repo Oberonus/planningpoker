@@ -1,8 +1,6 @@
 <template>
   <div class="tcard">
-    <div v-if="card===''" class="tcard-body-placeholder"></div>
-    <div v-else-if="card==='*'" class="tcard-body-back"></div>
-    <div v-else class="tcard-body">{{ card }}</div>
+    <div :class="computedClass" v-text="cardValue"/>
     <div class="tcard-name">{{ name }}</div>
   </div>
 </template>
@@ -19,9 +17,18 @@ export default {
   },
 
   computed: {
-    cardClass() {
-      return this.put ? "tcard-body" : "tcard-body-placeholder"
+    computedClass() {
+      switch(this.card) {
+        case '' : return 'tcard-body-placeholder';
+        case '*': return 'tcard-body-back';
+        default : return 'tcard-body';
+      }
+    },
+
+    cardValue(){
+      return this.card.replace('*', '');
     }
+
   },
 
   methods: {},

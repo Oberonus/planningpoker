@@ -5,7 +5,6 @@ const stateFinished = 'finished'
 
 export default class {
     workerID;
-
     id;
     State;
     Cards;
@@ -15,7 +14,6 @@ export default class {
 
     constructor(id) {
         this.id = id
-        this.updatePeriodically()
     }
 
     cards() {
@@ -70,8 +68,13 @@ export default class {
     }
 
     updatePeriodically() {
-        this.workerID = setInterval(async () => {
-            await this.updatePlayers()
+        this.workerID = setInterval(() => {
+            this.updatePlayers()
+                .catch(e => {
+                    console.error(e);
+                    this.stopUpdates();
+                    throw new Error('Error');
+                })
         }, 500)
     }
 
@@ -79,23 +82,28 @@ export default class {
         clearInterval(this.workerID)
     }
 
-    async update() {
-        const state = await game.state(this.id)
-        for (const attribute in state) {
-            this[attribute] = state[attribute];
-        }
-        this.Players && this.Players.sort(comparePlayers)
+    update() {
+        return game
+            .state(this.id)
+            .then((state) => {
+                for (const key in state) {
+                    this[key] = state[key];
+                }
+                this.Players && this.Players.sort(comparePlayers)
+            })
     }
 
-    async updatePlayers() {
-        const state = await game.state(this.id)
-        this.State = state.State
-        this.CanReveal = state.CanReveal
-        this.Players = state.Players
-        this.Players && this.Players.sort(comparePlayers)
-        if (this.State === stateFinished) {
-            this.VotedCard = ""
-        }
+    updatePlayers() {
+        return game.state(this.id)
+            .then(state => {
+                this.State = state.State
+                this.CanReveal = state.CanReveal
+                this.Players = state.Players
+                this.Players && this.Players.sort(comparePlayers)
+                if (this.State === stateFinished) {
+                    this.VotedCard = ""
+                }
+            })
     }
 }
 
