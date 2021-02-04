@@ -1,20 +1,18 @@
 <template>
   <v-app app>
+
     <v-navigation-drawer app clipped>
       <!-- -->
     </v-navigation-drawer>
 
     <v-app-bar app clipped-left>
-      <v-toolbar-title v-if="user.name" style="font-weight: 700">Hi, {{ user.name }}!</v-toolbar-title>
-      <v-spacer></v-spacer>
-
-      <v-btn @click="copyLink" class="mr-2">
-        <v-icon>mdi-content-copy</v-icon>
-        <span style="margin-left: 10px;">Invite players</span>
-      </v-btn>
-
-      <UserNameDialog :user="user"/>
-
+      <v-toolbar-title v-show="user.name"
+                       style="font-weight: 700"
+                       v-text="`Hi, ${user.name}!`"
+      />
+      <v-spacer />
+      <InviteDialog />
+      <UserNameDialog :user="user" />
     </v-app-bar>
 
     <!-- Sizes your content based upon application components -->
@@ -26,8 +24,6 @@
       <!-- -->
     </v-footer>
 
-
-    <InviteDialog ref="inviteDialog" v-model="inviteDialog"></InviteDialog>
   </v-app>
 </template>
 
@@ -48,9 +44,6 @@ export default {
 
   data: () => ({
     user: null,
-    openUserDialog: false,
-    invitationOpacity: 0,
-    inviteDialog: false,
   }),
 
   created() {
@@ -62,13 +55,6 @@ export default {
   },
 
   methods: {
-    async copyLink() {
-      await this.$refs.inviteDialog.open(location.href)
-      this.invitationOpacity = 1
-      setTimeout(() => {
-        this.invitationOpacity = 0
-      }, 3000)
-    }
 
   }
 };

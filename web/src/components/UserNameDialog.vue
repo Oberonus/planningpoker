@@ -5,30 +5,48 @@
             :persistent="!user.identified"
   >
     <template v-slot:activator="{ on, attrs }">
-      <v-btn icon v-on="on" v-bind="attrs">
-        <v-icon>mdi-account-edit</v-icon>
+      <v-btn icon
+             v-on="on"
+             v-bind="attrs"
+             class="ml-3 mr-0"
+      >
+        <v-icon v-text="'mdi-account-edit'"/>
       </v-btn>
     </template>
     
     <v-card>
       <v-card-title>
-        <span class="headline">Choose your name</span>
+        <span class="headline" v-text="'Choose your name'"/>
       </v-card-title>
+
       <v-divider/>
-      <v-card-text class="pt-4">
+
+      <v-card-text class="mt-5">
         <v-text-field
             ref="input"
             v-model="name"
             label="Your display name"
         />
       </v-card-text>
-      <v-divider/>
+
+      <v-divider />
+
       <v-card-actions>
-        <v-spacer/>
-        <v-btn color="primary" text @click="close(true)" :disabled="name===''">OK</v-btn>
-        <v-btn v-if="user.identified" color="primary" text @click="close(false)">Cancel</v-btn>
+        <v-spacer />
+        <v-btn color="primary" text
+               @click="close(true)"
+               :disabled="!name"
+               v-text="'OK'"
+        />
+        <v-btn v-if="user.identified"
+               color="primary"
+               text
+               @click="close(false)"
+               v-text="'Cancel'"
+        />
       </v-card-actions>
     </v-card>
+
   </v-dialog>
 </template>
 
