@@ -1,45 +1,57 @@
 <template>
-  <v-container fill-height fluid v-if="state">
-      <v-row align="center" justify="center" style="min-height: 100px;"/>
+  <v-scroll-y-transition>
+    <v-container fill-height fluid v-if="state">
+      <v-row no-gutters align="stretch" class="fill-height">
 
-      <v-row align="center" justify="center">
-        <card-on-table v-for="player in state.players()" v-bind:key="player.Name" :name="player.Name"
-                       :card="player.VotedCard"></card-on-table>
-      </v-row>
+        <v-col cols="12" class="row align-end justify-center no-gutters">
+          <card-on-table v-for="player in state.players()"
+                         :key="player.Name" :name="player.Name"
+                         :card="player.VotedCard"/>
+        </v-col>
 
-      <v-row align="center" justify="center" style="min-height: 100px;">
-        <v-btn v-if="state.canReveal()" @click="state.reveal()">Show cards</v-btn>
-        <v-btn v-else-if="state.canRestart()" @click="state.restart()">New voting</v-btn>
-        <span v-if="state.isRunning() && !state.canReveal()">Please pick your cards</span>
-      </v-row>
+        <v-col cols="12" class="row align-center justify-center mt-0 no-gutters">
+            <v-btn v-if="actionsPossible"
+                   width="120"
+                   @click="onClick"
+            >
+              <span v-text="actionText" />
+            </v-btn>
 
-      <v-row v-if="isRunning"
-          align="center"
-          justify="center"
-          style="min-height: 8rem;"
-      >
-          <v-col cols="1"
-                 class="pa-2"
-                 v-for="card in cards"
-                 :key="card"
-                 style="min-width: 4rem; max-width: 4.5rem"
-          >
-            <Card :value="card"
-                  :active="state.isActive(card)"
-                  @select="onSelectCard(card)"
+            <span v-if="isRunning && !state.canReveal()"
+                  v-text="'Please pick your cards'"
             />
-          </v-col>
-      </v-row>
+        </v-col>
 
-      <v-row v-else-if="state.isFinished()"
-           align="center"
-           justify="center"
-           style="min-height: 8rem;"
-      >
-          <h1>Voting finished</h1>
-      </v-row>
+        <v-col cols="12"
+               class="row justify-center align-center mt-0 no-gutters"
+               style="min-height: 10rem"
+        >
+          <v-row class="fill-height" align="center" justify="center">
+            <v-scale-transition hide-on-leave leave-absolute>
+              <v-row v-if="isRunning && !isFinished" no-gutters class="fill-height" align="center" justify="center">
+                <v-col class="px-2 py-0"
+                       v-for="card in cards"
+                       :key="card"
+                       style="min-width: 4rem; max-width: 4.5rem"
+                >
+                  <card :value="card"
+                        :active="state.isActive(card)"
+                        @select="onSelectCard(card)"
+                  />
+                </v-col>
+              </v-row>
+            </v-scale-transition>
 
+            <v-scale-transition hide-on-leave leave-absolute>
+              <h1 v-show="isFinished" v-text="'Voting finished'"/>
+            </v-scale-transition>
+          </v-row>
+
+        </v-col>
+
+      </v-row>
     </v-container>
+  </v-scroll-y-transition>
 </template>
 
 <script>
@@ -80,8 +92,8 @@ export default {
       this.startGame();
   },
 
-  async beforeDestroy() {
-    this.state && this.state.stopUpdates()
+  beforeDestroy() {
+    this.state && this.state.stopUpdates();
   },
 
   computed: {
@@ -91,7 +103,20 @@ export default {
 
     isRunning() {
       return this.state && this.state.isRunning();
+    },
+
+    isFinished(){
+      return this.state && this.state.isFinished();
+    },
+
+    actionsPossible(){
+      return this.state.canReveal() || this.state.canRestart();
+    },
+
+    actionText(){
+      return this.state.canRestart() ? 'New voting' : 'Show cards';
     }
+
   },
 
   methods: {
@@ -107,6 +132,11 @@ export default {
       })
     },
 
+    onClick(){
+      this.state.canReveal() && this.state.reveal();
+      this.state.canRestart() && this.state.restart();
+    },
+
     onSelectCard(card){
       //TODO: animate playground card
       this.state.vote(card);
@@ -117,4 +147,5 @@ export default {
 </script>
 
 <style scoped>
+
 </style>
