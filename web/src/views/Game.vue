@@ -1,10 +1,5 @@
 <template>
   <v-container fill-height fluid v-if="state">
-      <v-banner dark color="rgb(63,29,203)"
-                :style="'position:absolute; top:80px; left:10%; right: 10%; text-align: center; transition: opacity 0.3s ease-in-out; opacity: '+invitationOpacity+';'"
-                elevation="3">Invitation link copied to clipboard!
-      </v-banner>
-
       <v-row align="center" justify="center" style="min-height: 100px;"/>
 
       <v-row align="center" justify="center">

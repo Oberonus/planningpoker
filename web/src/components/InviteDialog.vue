@@ -62,6 +62,7 @@ export default {
       let textToCopy = this.$refs.textToCopy.$el.querySelector('input')
       textToCopy.select()
       document.execCommand("copy");
+      this.$emit('notify', 'Invitation link copied to clipboard!');
       this.dialog = false;
     },
 

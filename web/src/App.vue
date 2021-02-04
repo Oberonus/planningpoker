@@ -11,8 +11,22 @@
                        v-text="`Hi, ${user.name}!`"
       />
       <v-spacer />
-      <InviteDialog />
-      <UserNameDialog :user="user" />
+      <InviteDialog @notify="snackbarNotify"/>
+      <UserNameDialog :user="user" @notify="snackbarNotify"/>
+      <v-snackbar top right absolute
+                  :timeout="2000"
+                  v-model="snackbar"
+                  @click="snackbar=false"
+      >
+        <v-row no-gutters>
+          <span v-text="snackbarMessage"/>
+          <v-spacer />
+          <v-btn icon x-small @click="snackbar=false">
+            <v-icon v-text="'mdi-close'"/>
+          </v-btn>
+        </v-row>
+      </v-snackbar>
+
     </v-app-bar>
 
     <!-- Sizes your content based upon application components -->
@@ -44,6 +58,8 @@ export default {
 
   data: () => ({
     user: null,
+    snackbar: false,
+    snackbarMessage: '',
   }),
 
   created() {
@@ -55,7 +71,12 @@ export default {
   },
 
   methods: {
-
+    snackbarNotify(event){
+      if (event) {
+        this.snackbarMessage = event;
+        this.snackbar = true;
+      }
+    }
   }
 };
 </script>
@@ -63,7 +84,6 @@ export default {
 <style lang="stylus">
 html
 body
-  //overflow hidden
   overflow-y hidden
   background-color #f0f0f0
 </style>

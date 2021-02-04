@@ -87,6 +87,10 @@ export default {
 
     close(ok){
       if (ok) {
+        if (this.user.name !== this.name) {
+          this.$emit('notify', 'Your name has been changed!');
+        }
+
         if (this.user.identified){
           this.user.name = this.name;
         } else {
