@@ -1,57 +1,59 @@
 <template>
-  <v-scroll-y-transition>
-    <v-container fill-height fluid v-if="state">
-      <v-row no-gutters align="stretch" class="fill-height">
+  <v-container fill-height fluid v-if="state">
+    <v-row no-gutters align="stretch" class="fill-height">
 
-        <v-col cols="12" class="row align-end justify-center no-gutters">
-          <card-on-table v-for="player in state.players()"
-                         :key="player.Name" :name="player.Name"
-                         :card="player.VotedCard"/>
-        </v-col>
+      <v-col cols="12" class="row align-end justify-center no-gutters">
+        <card-on-table v-for="player in state.players()"
+                       :key="player.Name" :name="player.Name"
+                       :card="player.VotedCard"/>
+      </v-col>
 
-        <v-col cols="12" class="row align-center justify-center mt-0 no-gutters">
-            <v-btn v-if="actionsPossible"
-                   width="120"
-                   @click="onClick"
+      <v-col cols="12" class="row align-center justify-center mt-0 no-gutters">
+          <v-btn v-if="actionsPossible"
+                 width="120"
+                 @click="onClick"
+          >
+            <span v-text="actionText" />
+          </v-btn>
+
+          <span v-if="isRunning && !state.canReveal()"
+                v-text="'Please pick your cards'"
+          />
+      </v-col>
+
+      <v-col cols="12"
+             class="row justify-center align-center mt-0 no-gutters"
+             style="min-height: 10rem"
+      >
+        <v-row class="fill-height" align="center" justify="center">
+          <v-scale-transition hide-on-leave leave-absolute>
+            <v-row v-if="isRunning && !isFinished"
+                   no-gutters
+                   class="fill-height"
+                   align="center"
+                   justify="center"
             >
-              <span v-text="actionText" />
-            </v-btn>
+              <v-col class="px-2 py-0"
+                     v-for="card in cards"
+                     :key="card"
+                     style="min-width: 4rem; max-width: 4.5rem"
+              >
+                <card :value="card"
+                      :active="state.isActive(card)"
+                      @select="onSelectCard(card)"
+                />
+              </v-col>
+            </v-row>
+          </v-scale-transition>
 
-            <span v-if="isRunning && !state.canReveal()"
-                  v-text="'Please pick your cards'"
-            />
-        </v-col>
+          <v-scale-transition hide-on-leave leave-absolute>
+            <h1 v-show="isFinished" v-text="'Voting finished'"/>
+          </v-scale-transition>
+        </v-row>
+      </v-col>
 
-        <v-col cols="12"
-               class="row justify-center align-center mt-0 no-gutters"
-               style="min-height: 10rem"
-        >
-          <v-row class="fill-height" align="center" justify="center">
-            <v-scale-transition hide-on-leave leave-absolute>
-              <v-row v-if="isRunning && !isFinished" no-gutters class="fill-height" align="center" justify="center">
-                <v-col class="px-2 py-0"
-                       v-for="card in cards"
-                       :key="card"
-                       style="min-width: 4rem; max-width: 4.5rem"
-                >
-                  <card :value="card"
-                        :active="state.isActive(card)"
-                        @select="onSelectCard(card)"
-                  />
-                </v-col>
-              </v-row>
-            </v-scale-transition>
-
-            <v-scale-transition hide-on-leave leave-absolute>
-              <h1 v-show="isFinished" v-text="'Voting finished'"/>
-            </v-scale-transition>
-          </v-row>
-
-        </v-col>
-
-      </v-row>
-    </v-container>
-  </v-scroll-y-transition>
+    </v-row>
+  </v-container>
 </template>
 
 <script>
@@ -77,7 +79,6 @@ export default {
 
   data: () => ({
       state: null,
-      invitationOpacity: 0,
       gameID: null,
   }),
 

@@ -1,26 +1,27 @@
 <template>
   <v-app app>
 
-    <v-navigation-drawer app clipped>
-      <!-- -->
+    <v-navigation-drawer v-model="drawer" app clipped>
+      <user-list/>
     </v-navigation-drawer>
 
     <v-app-bar app clipped-left>
+      <v-app-bar-nav-icon @click.stop="drawer = !drawer"/>
       <v-toolbar-title v-show="user.name"
-                       style="font-weight: 700"
-                       v-text="`Hi, ${user.name}!`"
+          style="font-weight: 700"
+          v-text="`Hi, ${user.name}!`"
       />
       <v-spacer />
       <InviteDialog @notify="snackbarNotify"/>
       <UserNameDialog :user="user" @notify="snackbarNotify"/>
+
       <v-snackbar top right absolute
                   :timeout="2000"
                   v-model="snackbar"
                   @click="snackbar=false"
       >
-        <v-row no-gutters>
+        <v-row no-gutters justify="space-between" align="center">
           <span v-text="snackbarMessage"/>
-          <v-spacer />
           <v-btn icon x-small @click="snackbar=false">
             <v-icon v-text="'mdi-close'"/>
           </v-btn>
@@ -31,7 +32,9 @@
 
     <!-- Sizes your content based upon application components -->
     <v-main>
-      <router-view :user="user"/>
+      <v-fade-transition>
+        <router-view :user="user"/>
+      </v-fade-transition>
     </v-main>
 
     <v-footer app>
@@ -44,6 +47,7 @@
 <script>
 
 import User from "@/models/user";
+import UserList from "@/components/UserList";
 import InviteDialog from "@/components/InviteDialog";
 import UserNameDialog from "@/components/UserNameDialog";
 import axios from "axios";
@@ -53,11 +57,13 @@ export default {
 
   components: {
     UserNameDialog,
-    InviteDialog
+    InviteDialog,
+    UserList
   },
 
   data: () => ({
     user: null,
+    drawer: true,
     snackbar: false,
     snackbarMessage: '',
   }),

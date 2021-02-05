@@ -3,7 +3,9 @@ import game from "@/models/game";
 const stateRunning = 'started'
 const stateFinished = 'finished'
 
-export default class {
+let instance = null, callback;
+
+export default class State{
     workerID;
     id;
     State;
@@ -12,8 +14,21 @@ export default class {
     VotedCard;
     CanReveal;
 
+    static getInstance = (func) => {
+        if (instance) {
+            func(instance);
+        } else {
+            callback = func;
+        }
+    }
+    static setInstance = (value) => {
+        instance = value;
+        callback && callback(instance);
+    }
+
     constructor(id) {
-        this.id = id
+        this.id = id;
+        State.setInstance(this);
     }
 
     cards() {

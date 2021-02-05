@@ -1,11 +1,15 @@
 const axios = require('axios');
 import ls from 'local-storage'
 
+let _user = null;
+
 export default class User {
     constructor() {
+        if (_user) { return _user }
         this._name = ls.get('user_name') || "";
         this.id = ls.get('user_id') || "";
         this.registered = !!this._name;
+        _user = this;
     }
 
     get identified() {
