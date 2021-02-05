@@ -1,39 +1,57 @@
 const axios = require('axios');
 import ls from 'local-storage'
 
-export default {
-    name: "",
-    id: "",
+let _user = null;
 
-    identified() {
-        console.log(`user name === '${this.name}'`)
-        return this.name !== undefined && this.name !== "" && this.name != null
-    },
+export default class User {
+    constructor() {
+        if (_user) { return _user }
+        this._name = ls.get('user_name') || "";
+        this.id = ls.get('user_id') || "";
+        this.registered = !!this._name;
+        _user = this;
+    }
 
-    async authenticate() {
-        if (!this.identified()) {
+    get identified() {
+        return !!this._name && this.registered;
+    }
+
+    get name() { return this._name }
+    set name(value) {
+        if (!value || value === this._name) { return; }
+
+        this.identified && this.update(value);
+        this._name = value;
+        ls.set('user_name', value);
+    }
+
+    authenticate() {
+        if (!this.name) {
             throw "unknown user name, can not authenticate"
         }
 
-        try {
-            const rsp = await axios.get("me")
-            // actualize name
-            this.name = rsp.data.name
-        } catch (e) {
-            if (e.response.status === 401) {
-                const rsp = await axios.post("register", {name: this.name})
-                this.id = rsp.data.user_id
-            } else {
-                throw e
-            }
-        }
+        return axios.get("me")
+            .then(rsp => {
+                this._name = rsp.data.name;
+                this.registered = true;
+            })
+            .catch(e => {
+                if (e.response.status === 401) {
+                    axios.post("register", {name: this._name})
+                        .then(rsp => {
+                            this.id = rsp.data.user_id
+                            ls.set('user_id', this.id);
+                            this.registered = true;
+                        })
+                } else {
+                    console.error('request error: ', e);
+                }
+            })
+    }
 
-        ls.set('user_name', this.name)
-        ls.set('user_id', this.id)
-    },
-
-    async update(name) {
-        await axios.put("me", {name: name})
-        this.name = name
+    update(name) {
+        return axios
+            .put("me", {name: name})
+            .then(() => name);
     }
 }

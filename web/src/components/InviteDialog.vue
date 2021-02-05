@@ -1,58 +1,71 @@
 <template>
-  <v-dialog v-model="show" max-width="500px">
+  <v-dialog v-model="dialog" max-width="500px">
+
+    <template v-slot:activator="{ on, attrs }">
+      <v-btn v-on="on" v-bind="attrs" class="mr-1">
+        <v-icon left v-text="'mdi-content-copy'"/>
+        <span v-text="'Invite players'"/>
+      </v-btn>
+    </template>
+
     <v-card>
       <v-card-title>
         <span class="headline">Invite your teammates</span>
       </v-card-title>
+
       <v-divider></v-divider>
-      <v-card-text style="margin-top: 20px;">
-        <v-row>
-          <v-col cols="12">
-            <v-text-field ref="textToCopy" v-model="url" label="URL to copy" requred></v-text-field>
-          </v-col>
-        </v-row>
+
+      <v-card-text class="mt-5">
+        <v-text-field ref="textToCopy"
+                      readonly
+                      :value="url"
+                      @click.prevent="open"
+                      label="URL to copy"/>
       </v-card-text>
-      <v-divider></v-divider>
+
+      <v-divider/>
+
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="primary" text @click="copy">Copy invitation link</v-btn>
+        <v-btn color="primary" text @click="copy">
+          <span v-text="'Copy invitation link'"/>
+        </v-btn>
       </v-card-actions>
     </v-card>
+
   </v-dialog>
 </template>
 
 <script>
 export default {
-  data: () => {
-    return {
-      show: false,
-      url: '',
-      resolve: null,
-    }
+  data: () => ({
+    dialog: false,
+    url: '',
+  }),
+
+  watch: {
+    dialog: function(value) {
+      value && this.open();
+    },
   },
 
   methods: {
-    async open(url) {
-      this.url = url
-      this.show = true
-
-      this.$nextTick(() => {
-        let textToCopy = this.$refs.textToCopy.$el.querySelector('input')
-        textToCopy.select()
-      })
-
-      return new Promise((resolve) => {
-        this.resolve = resolve
-      })
+    open() {
+      this.url = location.href;
+      setTimeout(() => {
+        let textToCopy = this.$refs.textToCopy.$el.querySelector('input');
+        textToCopy.select();
+      }, 0)
     },
 
     copy() {
       let textToCopy = this.$refs.textToCopy.$el.querySelector('input')
       textToCopy.select()
       document.execCommand("copy");
-      this.show = false
-      this.resolve()
+      this.$emit('notify', 'Invitation link copied to clipboard!');
+      this.dialog = false;
     },
+
   },
 }
 </script>

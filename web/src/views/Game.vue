@@ -1,117 +1,152 @@
 <template>
-  <v-container fill-height fluid>
-    <v-app-bar absolute>
-      <v-toolbar-title style="font-weight: 700">Hi, {{ user.name }}!</v-toolbar-title>
-      <v-spacer></v-spacer>
-      <v-btn @click="copyLink">
-        <v-icon>mdi-content-copy</v-icon>
-        <span style="margin-left: 10px;">Invite players</span>
-      </v-btn>
-      <v-btn style="margin-left: 10px;" icon @click="changeName">
-        <v-icon>mdi-account-edit</v-icon>
-      </v-btn>
-    </v-app-bar>
+  <v-container fill-height fluid v-if="state">
+    <v-row no-gutters align="stretch" class="fill-height">
 
-    <v-banner dark color="rgb(63,29,203)"
-              :style="'position:absolute; top:80px; left:10%; right: 10%; text-align: center; transition: opacity 0.3s ease-in-out; opacity: '+invitationOpacity+';'"
-              elevation="3">Invitation link copied to clipboard!
-    </v-banner>
+      <v-col cols="12" class="row align-end justify-center no-gutters">
+        <card-on-table v-for="player in state.players()"
+                       :key="player.Name" :name="player.Name"
+                       :card="player.VotedCard"/>
+      </v-col>
 
-    <v-row align="center" justify="center" v-if="state" style="min-height: 100px;">
+      <v-col cols="12" class="row align-center justify-center mt-0 no-gutters">
+          <v-btn v-if="actionsPossible"
+                 width="120"
+                 @click="onClick"
+          >
+            <span v-text="actionText" />
+          </v-btn>
+
+          <span v-if="isRunning && !state.canReveal()"
+                v-text="'Please pick your cards'"
+          />
+      </v-col>
+
+      <v-col cols="12"
+             class="row justify-center align-center mt-0 no-gutters"
+             style="min-height: 10rem"
+      >
+        <v-row class="fill-height" align="center" justify="center">
+          <v-scale-transition hide-on-leave leave-absolute>
+            <v-row v-if="isRunning && !isFinished"
+                   no-gutters
+                   class="fill-height"
+                   align="center"
+                   justify="center"
+            >
+              <v-col class="px-2 py-0"
+                     v-for="card in cards"
+                     :key="card"
+                     style="min-width: 4rem; max-width: 4.5rem"
+              >
+                <card :value="card"
+                      :active="state.isActive(card)"
+                      @select="onSelectCard(card)"
+                />
+              </v-col>
+            </v-row>
+          </v-scale-transition>
+
+          <v-scale-transition hide-on-leave leave-absolute>
+            <h1 v-show="isFinished" v-text="'Voting finished'"/>
+          </v-scale-transition>
+        </v-row>
+      </v-col>
+
     </v-row>
-
-    <v-row align="center" justify="center" v-if="state">
-      <card-on-table v-for="player in state.players()" v-bind:key="player.Name" :name="player.Name"
-                     :card="player.VotedCard"></card-on-table>
-    </v-row>
-
-    <v-row align="center" justify="center" v-if="state" style="min-height: 100px;">
-      <v-btn v-if="state.canReveal()" @click="state.reveal()">Show cards</v-btn>
-      <v-btn v-else-if="state.canRestart()" @click="state.restart()">New voting</v-btn>
-      <div v-if="state.isRunning() && !state.canReveal()">Please pick your cards</div>
-    </v-row>
-
-    <v-row align="center" justify="center" v-if="state" v-show="state.isRunning()" style="min-height: 100px;">
-      <Card v-for="card in state.cards()"
-            v-bind:key="card"
-            @click="state.vote(card)"
-            :active="state.isActive(card)"
-            :value="card">
-      </Card>
-    </v-row>
-
-    <v-row align="center" justify="center" v-if="state" v-show="state.isFinished()" style="min-height: 100px;">
-      <h1>Voting finished</h1>
-    </v-row>
-    <UserNameDialog ref="userNameDialog"></UserNameDialog>
-    <InviteDialog ref="inviteDialog"></InviteDialog>
   </v-container>
 </template>
 
 <script>
 
+import Card from "@/components/Card";
+import CardOnTable from "@/components/CardOnTable";
 import State from "@/models/state";
 import game from "@/models/game";
-import user from "@/models/user";
-import Card from "@/components/Card";
-import UserNameDialog from "@/components/UserNameDialog";
-import CardOnTable from "@/components/CardOnTable";
-import InviteDialog from "@/components/InviteDialog";
 
 export default {
   name: 'Game',
 
   components: {
-    UserNameDialog,
     CardOnTable,
     Card,
-    InviteDialog
   },
 
-  data: () => {
-    return {
-      user: user,
+  props: {
+    user: {
+      required: true,
+    },
+  },
+
+  data: () => ({
       state: null,
-      invitationOpacity: 0,
-    }
+      gameID: null,
+  }),
+
+  watch:{
+    "user.identified": function(value) {
+      value && this.startGame();
+    },
   },
 
-  async mounted() {
-    try {
-      if (!user.identified()) {
-        user.name = await this.$refs.userNameDialog.open(user.name)
-      }
-      await user.authenticate()
-
-      const gameID = this.$route.params.id
-      await game.join(gameID)
-      this.state = new State(gameID)
-      await this.state.update()
-    } catch (e) {
-      console.log(e)
-      await this.$router.push({name: 'Home'})
-    }
+  mounted() {
+      this.gameID = this.$route.params.id;
+      this.startGame();
   },
 
-  async beforeDestroy() {
-    this.state && this.state.stopUpdates()
+  beforeDestroy() {
+    this.state && this.state.stopUpdates();
+  },
+
+  computed: {
+    cards() {
+      return this.state.cards() || [];
+    },
+
+    isRunning() {
+      return this.state && this.state.isRunning();
+    },
+
+    isFinished(){
+      return this.state && this.state.isFinished();
+    },
+
+    actionsPossible(){
+      return this.state.canReveal() || this.state.canRestart();
+    },
+
+    actionText(){
+      return this.state.canRestart() ? 'New voting' : 'Show cards';
+    }
+
   },
 
   methods: {
-    async changeName() {
-      const name = await this.$refs.userNameDialog.openModify(user.name)
-      if (name !== "") {
-        await user.update(name)
-      }
+    startGame(){
+      this.user.authenticate().then(() => {
+        game.join(this.gameID).then(() => {
+          this.state = new State(this.gameID);
+          this.state.updatePeriodically();
+          this.state.update();
+        })
+      }).catch(e => {
+        console.warn(e);
+      })
     },
 
-    async copyLink() {
-      await this.$refs.inviteDialog.open(location.href)
-      this.invitationOpacity = 1
-      setTimeout(() => {
-        this.invitationOpacity = 0
-      }, 3000)
-    }
+    onClick(){
+      this.state.canReveal() && this.state.reveal();
+      this.state.canRestart() && this.state.restart();
+    },
+
+    onSelectCard(card){
+      //TODO: animate playground card
+      this.state.vote(card);
+    },
+
   }
 }
 </script>
+
+<style scoped>
+
+</style>
