@@ -1,6 +1,10 @@
 package domain
 
-import "errors"
+import (
+	"context"
+	"errors"
+	"time"
+)
 
 type GamesService struct {
 	gamesRepo GameRepository
@@ -69,18 +73,40 @@ func (s *GamesService) Reveal(gameID, userID string) error {
 	})
 }
 
-func (s *GamesService) GameState(gameID, userID string) (*GameState, error) {
-	var gotGame *Game
-	err := s.gamesRepo.ModifyExclusively(gameID, func(game *Game) error {
-		gotGame = game
-		return game.Ping(userID)
+func (s *GamesService) GameState(gameID string, userID string, timeout time.Duration, lastKnownStateID string) (*GameState, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	var game *Game
+	err := s.gamesRepo.ModifyExclusively(gameID, func(g *Game) error {
+		game = g
+		return g.Ping(userID)
 	})
 	if err != nil {
 		return nil, err
 	}
 
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, nil
+		default:
+		}
+
+		if game.ChangeID != lastKnownStateID {
+			break
+		}
+
+		time.Sleep(100 * time.Millisecond)
+
+		game, err = s.gamesRepo.Get(gameID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	userIDs := make([]string, 0)
-	for id := range gotGame.Players {
+	for id := range game.Players {
 		userIDs = append(userIDs, id)
 	}
 
@@ -94,5 +120,5 @@ func (s *GamesService) GameState(gameID, userID string) (*GameState, error) {
 		mapUsers[u.ID] = u
 	}
 
-	return gotGame.CurrentState(userID, mapUsers), nil
+	return game.CurrentState(userID, mapUsers), nil
 }

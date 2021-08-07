@@ -6,8 +6,8 @@ export default {
         return resp.data.game_id
     },
 
-    async state(gameID) {
-        const resp = await axios.get(`games/${gameID}`)
+    async state(gameID, lastChangeID) {
+        const resp = await axios.get(`games/${gameID}?lastChangeID=${lastChangeID}`)
         return resp.data
     },
 

@@ -12,6 +12,7 @@ export default class {
     Players;
     VotedCard;
     CanReveal;
+    ChangeID;
 
     constructor(id) {
         this.id = id
@@ -48,31 +49,36 @@ export default class {
 
     async reveal() {
         await game.reveal(this.id)
-        await this.update()
     }
 
     async restart() {
         await game.restart(this.id)
-        await this.update()
     }
 
     async vote(card) {
         if (this.VotedCard === card) {
             this.VotedCard = ""
             await game.unVote(this.id)
-            await this.update()
         } else {
             card = encodeURIComponent(card)
             this.VotedCard = card
             await game.vote(this.id, card)
-            await this.update()
         }
     }
 
-    updatePeriodically() {
-        this.workerID = setInterval(async () => {
-            await this.updatePlayers()
-        }, 500)
+    // long polling operation, will throttle in case of any exception
+    async updatePeriodically() {
+        try {
+            await this.update()
+            setTimeout(async () => {
+                await this.updatePeriodically()
+            }, 0)
+        } catch (e) {
+            setTimeout(async () => {
+                await this.updatePeriodically()
+            }, 1000)
+            throw e
+        }
     }
 
     stopUpdates() {
@@ -80,22 +86,11 @@ export default class {
     }
 
     async update() {
-        const state = await game.state(this.id)
+        const state = await game.state(this.id, this.ChangeID)
         for (const attribute in state) {
             this[attribute] = state[attribute];
         }
         this.Players && this.Players.sort(comparePlayers)
-    }
-
-    async updatePlayers() {
-        const state = await game.state(this.id)
-        this.State = state.State
-        this.CanReveal = state.CanReveal
-        this.Players = state.Players
-        this.Players && this.Players.sort(comparePlayers)
-        if (this.State === stateFinished) {
-            this.VotedCard = ""
-        }
     }
 }
 

@@ -14,20 +14,25 @@ type Player struct {
 	LastPing  time.Time
 }
 
+var (
+	CfgAllCanReveal = true
+)
+
 const (
 	GameStateStarted  = "started"
 	GameStateFinished = "finished"
 
-	StalePlayerTTL = 5 * time.Second
+	StalePlayerTTL = 10 * time.Second
 )
 
 var TShirtCards = []string{"XXS", "XS", "S", "M", "L", "XL", "XXL", "?"}
 
 type Game struct {
-	ID      string
-	Cards   []string
-	Players map[string]*Player
-	State   string
+	ID       string
+	Cards    []string
+	Players  map[string]*Player
+	State    string
+	ChangeID string
 }
 
 func NewTShirtGame() *Game {
@@ -45,13 +50,15 @@ func (g *Game) Join(uid string) error {
 	}
 
 	// first joiner will be an admin
-	canReveal := len(g.Players) == 0
+	canReveal := CfgAllCanReveal || len(g.Players) == 0
 
 	g.Players[uid] = &Player{
 		VotedCard: "",
 		CanReveal: canReveal,
 		LastPing:  time.Now(),
 	}
+
+	g.setChanged()
 
 	return nil
 }
@@ -66,6 +73,8 @@ func (g *Game) Restart(uid string) error {
 	for _, p := range g.Players {
 		p.VotedCard = ""
 	}
+
+	g.setChanged()
 
 	return nil
 }
@@ -92,6 +101,8 @@ func (g *Game) Vote(uid string, vote string) error {
 
 	g.Players[uid].VotedCard = vote
 
+	g.setChanged()
+
 	return nil
 }
 
@@ -107,6 +118,8 @@ func (g *Game) Reveal(uid string) error {
 
 	g.State = GameStateFinished
 
+	g.setChanged()
+
 	return nil
 }
 
@@ -121,6 +134,8 @@ func (g *Game) UnVote(uid string) error {
 
 	g.Players[uid].VotedCard = ""
 
+	g.setChanged()
+
 	return nil
 }
 
@@ -129,6 +144,7 @@ func (g *Game) Leave(uid string) error {
 		return errors.New("user is not a player")
 	}
 	delete(g.Players, uid)
+	g.setChanged()
 	return nil
 }
 
@@ -164,6 +180,11 @@ func (g *Game) Ping(uid string) error {
 			break
 		}
 	}
+
+	if len(g.Players) != len(newPlayers) {
+		g.setChanged()
+	}
+
 	g.Players = newPlayers
 
 	return nil
@@ -176,6 +197,7 @@ func (g *Game) CurrentState(userID string, allUsers map[string]*User) *GameState
 		State:     g.State,
 		VotedCard: g.Players[userID].VotedCard,
 		CanReveal: g.Players[userID].CanReveal,
+		ChangeID:  g.ChangeID,
 	}
 
 	for uid, p := range g.Players {
@@ -197,4 +219,8 @@ func (g *Game) CurrentState(userID string, allUsers map[string]*User) *GameState
 	}
 
 	return state
+}
+
+func (g *Game) setChanged() {
+	g.ChangeID = uuid.NewString()
 }

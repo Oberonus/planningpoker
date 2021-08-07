@@ -3,6 +3,7 @@ package http
 import (
 	"errors"
 	"strings"
+	"time"
 
 	"planningpoker/internal/domain"
 
@@ -168,8 +169,9 @@ func (h *API) GameState(c *gin.Context) {
 		return
 	}
 	gameID := c.Param("gameID")
+	lastChangeID := c.Query("lastChangeID")
 
-	state, err := h.gamesService.GameState(gameID, user.ID)
+	state, err := h.gamesService.GameState(gameID, user.ID, 5*time.Second, lastChangeID)
 	if err != nil {
 		internalError(c, err)
 		return
