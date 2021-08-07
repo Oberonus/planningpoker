@@ -86,10 +86,11 @@ func (s *GamesService) GameState(gameID string, userID string, timeout time.Dura
 		return nil, err
 	}
 
+pollingLoop:
 	for {
 		select {
 		case <-ctx.Done():
-			return nil, nil
+			break pollingLoop
 		default:
 		}
 
