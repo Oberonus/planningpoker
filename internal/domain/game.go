@@ -161,11 +161,11 @@ func (g *Game) Ping(uid string) error {
 	}
 	p.LastPing = time.Now()
 
-	// cleanup stale players
+	// cleanup stale players who did not vote
 	newPlayers := make(map[string]*Player)
 	hasRevealer := false
 	for id, p := range g.Players {
-		if p.LastPing.Add(StalePlayerTTL).After(time.Now()) {
+		if p.LastPing.Add(StalePlayerTTL).After(time.Now()) || p.VotedCard != "" {
 			newPlayers[id] = p
 			if p.CanReveal {
 				hasRevealer = true
