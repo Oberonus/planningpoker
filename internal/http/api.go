@@ -34,6 +34,7 @@ func (h *API) SetupRoutes(r gin.IRoutes) {
 	r.PUT("/api/v1/me", h.ChangeUserData)
 	r.POST("/api/v1/register", h.Register)
 	r.POST("/api/v1/games", h.CreateGame)
+	r.PUT("/api/v1/games/:gameID", h.UpdateGame)
 	r.POST("/api/v1/games/:gameID/join", h.Join)
 	r.POST("/api/v1/games/:gameID/votes/:vote", h.Vote)
 	r.POST("/api/v1/games/:gameID/unvote", h.UnVote)
@@ -97,13 +98,30 @@ func (h *API) ChangeUserData(c *gin.Context) {
 	success(c, gin.H{})
 }
 
+type gamePayload struct {
+	Name      string `json:"name"`
+	TicketURL string `json:"url"`
+}
+
 func (h *API) CreateGame(c *gin.Context) {
 	user := h.authenticate(c)
 	if user == nil {
 		return
 	}
 
-	gameID, err := h.gamesService.Create(user.ID)
+	pl := gamePayload{}
+	if err := c.BindJSON(&pl); err != nil {
+		badRequestError(c, err)
+		return
+	}
+
+	cmd, err := domain.NewCreateGameCommand(pl.Name, pl.TicketURL, user.ID)
+	if err != nil {
+		badRequestError(c, err)
+		return
+	}
+
+	gameID, err := h.gamesService.Create(*cmd)
 	if err != nil {
 		internalError(c, err)
 		return
@@ -112,6 +130,34 @@ func (h *API) CreateGame(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"game_id": gameID,
 	})
+}
+
+func (h *API) UpdateGame(c *gin.Context) {
+	user := h.authenticate(c)
+	if user == nil {
+		return
+	}
+	gameID := c.Param("gameID")
+
+	pl := gamePayload{}
+	if err := c.BindJSON(&pl); err != nil {
+		badRequestError(c, err)
+		return
+	}
+
+	cmd, err := domain.NewUpdateGameCommand(gameID, pl.Name, pl.TicketURL, user.ID)
+	if err != nil {
+		badRequestError(c, err)
+		return
+	}
+
+	err = h.gamesService.Update(*cmd)
+	if err != nil {
+		internalError(c, err)
+		return
+	}
+
+	c.JSON(200, gin.H{})
 }
 
 func (h *API) Join(c *gin.Context) {

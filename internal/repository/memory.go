@@ -16,11 +16,13 @@ type playerDTO struct {
 }
 
 type gameDTO struct {
-	ID       string
-	Cards    []string             `json:"cards"`
-	Players  map[string]playerDTO `json:"players"`
-	State    string               `json:"state"`
-	ChangeID string               `json:"change_id"`
+	ID        string
+	Name      string               `json:"name"`
+	TicketURL string               `json:"ticket_url"`
+	Cards     []string             `json:"cards"`
+	Players   map[string]playerDTO `json:"players"`
+	State     string               `json:"state"`
+	ChangeID  string               `json:"change_id"`
 }
 
 type MemoryGameRepository struct {
@@ -62,11 +64,13 @@ func (r *MemoryGameRepository) ModifyExclusively(id string, cb func(*domain.Game
 
 func (r *MemoryGameRepository) Save(game *domain.Game) error {
 	dto := gameDTO{
-		ID:       game.ID,
-		Cards:    game.Cards,
-		Players:  make(map[string]playerDTO),
-		State:    game.State,
-		ChangeID: game.ChangeID,
+		ID:        game.ID,
+		Name:      game.Name,
+		TicketURL: game.TicketURL,
+		Cards:     game.Cards,
+		Players:   make(map[string]playerDTO),
+		State:     game.State,
+		ChangeID:  game.ChangeID,
 	}
 
 	for id, p := range game.Players {
@@ -105,11 +109,13 @@ func (r *MemoryGameRepository) Get(id string) (*domain.Game, error) {
 	}
 
 	game := domain.Game{
-		ID:       dto.ID,
-		Cards:    dto.Cards,
-		Players:  make(map[string]*domain.Player),
-		State:    dto.State,
-		ChangeID: dto.ChangeID,
+		ID:        dto.ID,
+		Name:      dto.Name,
+		TicketURL: dto.TicketURL,
+		Cards:     dto.Cards,
+		Players:   make(map[string]*domain.Player),
+		State:     dto.State,
+		ChangeID:  dto.ChangeID,
 	}
 
 	for i, p := range dto.Players {

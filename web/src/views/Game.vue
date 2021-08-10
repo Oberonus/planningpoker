@@ -1,7 +1,21 @@
 <template>
   <v-container fill-height fluid>
     <v-app-bar absolute>
-      <v-toolbar-title style="font-weight: 700">Hi, {{ user.name }}!</v-toolbar-title>
+      <v-toolbar-title v-if="state" style="font-weight: 700">
+        <v-btn icon href="/">
+          <v-icon>mdi-home</v-icon>
+        </v-btn>
+        <v-btn v-if="state.TicketURL" :depressed="true" :ripple="false"
+               :href="state.TicketURL" target="_blank">
+          <span>{{ state.Name ? state.Name : state.TicketURL }}</span>
+        </v-btn>
+        <v-btn v-if="!state.TicketURL && state.Name" :depressed="true" :ripple="false" target="_blank">
+          <span>{{ state.Name }}</span>
+        </v-btn>
+        <v-btn icon @click="changeGameParams">
+          <v-icon>mdi-cog</v-icon>
+        </v-btn>
+      </v-toolbar-title>
       <v-spacer></v-spacer>
       <v-btn @click="copyLink">
         <v-icon>mdi-content-copy</v-icon>
@@ -44,6 +58,7 @@
       <h1>Voting finished</h1>
     </v-row>
     <UserNameDialog ref="userNameDialog"></UserNameDialog>
+    <GameSettingsDialog ref="gameSettingsDialog"></GameSettingsDialog>
     <InviteDialog ref="inviteDialog"></InviteDialog>
   </v-container>
 </template>
@@ -57,6 +72,7 @@ import Card from "@/components/Card";
 import UserNameDialog from "@/components/UserNameDialog";
 import CardOnTable from "@/components/CardOnTable";
 import InviteDialog from "@/components/InviteDialog";
+import GameSettingsDialog from "@/components/GameSettingsDialog"
 
 export default {
   name: 'Game',
@@ -65,7 +81,8 @@ export default {
     UserNameDialog,
     CardOnTable,
     Card,
-    InviteDialog
+    InviteDialog,
+    GameSettingsDialog
   },
 
   data: () => {
@@ -102,6 +119,14 @@ export default {
       if (name !== "") {
         await user.update(name)
       }
+    },
+
+    async changeGameParams() {
+      const [ok, name, url] = await this.$refs.gameSettingsDialog.openModify(this.state.Name, this.state.TicketURL)
+      if (!ok) {
+        return
+      }
+      await game.update(this.state.id, name, url)
     },
 
     async copyLink() {

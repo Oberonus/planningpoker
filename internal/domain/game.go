@@ -28,20 +28,37 @@ const (
 var TShirtCards = []string{"XXS", "XS", "S", "M", "L", "XL", "XXL", "?"}
 
 type Game struct {
-	ID       string
-	Cards    []string
-	Players  map[string]*Player
-	State    string
-	ChangeID string
+	ID        string
+	Name      string
+	TicketURL string
+	Cards     []string
+	Players   map[string]*Player
+	State     string
+	ChangeID  string
 }
 
-func NewTShirtGame() *Game {
+func NewTShirtGame(cmd CreateGameCommand) *Game {
 	return &Game{
-		ID:      strings.Replace(uuid.New().String(), "-", "", -1),
-		Cards:   TShirtCards,
-		Players: make(map[string]*Player),
-		State:   GameStateStarted,
+		ID:        strings.Replace(uuid.New().String(), "-", "", -1),
+		Name:      cmd.Name,
+		TicketURL: cmd.TicketURL,
+		Cards:     TShirtCards,
+		Players:   make(map[string]*Player),
+		State:     GameStateStarted,
 	}
+}
+
+func (g *Game) Update(cmd UpdateGameCommand) error {
+	_, ok := g.Players[cmd.UserID]
+	if !ok {
+		return errors.New("user is not a player")
+	}
+
+	g.Name = cmd.Name
+	g.TicketURL = cmd.TicketURL
+	g.setChanged()
+
+	return nil
 }
 
 func (g *Game) Join(uid string) error {
@@ -193,6 +210,8 @@ func (g *Game) Ping(uid string) error {
 func (g *Game) CurrentState(userID string, allUsers map[string]*User) *GameState {
 	state := &GameState{
 		Cards:     g.Cards,
+		Name:      g.Name,
+		TicketURL: g.TicketURL,
 		Players:   make([]PlayerState, 0, len(g.Players)),
 		State:     g.State,
 		VotedCard: g.Players[userID].VotedCard,

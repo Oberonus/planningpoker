@@ -1,9 +1,20 @@
 import axios from 'axios'
 
 export default {
-    async create() {
-        const resp = await axios.post("games")
+    async create(name, url) {
+        const resp = await axios.post("games", {
+            name: name,
+            url: url,
+        })
         return resp.data.game_id
+    },
+
+    async update(gameID, name, url) {
+        const resp = await axios.put(`games/${gameID}`, {
+            name: name,
+            url: url,
+        })
+        return resp.data
     },
 
     async state(gameID, lastChangeID) {

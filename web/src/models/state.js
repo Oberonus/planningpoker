@@ -7,6 +7,8 @@ export default class {
     workerID;
 
     id;
+    Name;
+    TicketURL;
     State;
     Cards;
     Players;

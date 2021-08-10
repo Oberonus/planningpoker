@@ -25,9 +25,10 @@ func NewGamesService(gr GameRepository, ur UsersRepository) (*GamesService, erro
 	}, nil
 }
 
-func (s *GamesService) Create(userID string) (string, error) {
-	game := NewTShirtGame()
-	if err := game.Join(userID); err != nil {
+func (s *GamesService) Create(cmd CreateGameCommand) (string, error) {
+	game := NewTShirtGame(cmd)
+
+	if err := game.Join(cmd.UserID); err != nil {
 		return "", err
 	}
 	if err := s.gamesRepo.Save(game); err != nil {
@@ -35,6 +36,12 @@ func (s *GamesService) Create(userID string) (string, error) {
 	}
 
 	return game.ID, nil
+}
+
+func (s *GamesService) Update(cmd UpdateGameCommand) error {
+	return s.gamesRepo.ModifyExclusively(cmd.GameID, func(game *Game) error {
+		return game.Update(cmd)
+	})
 }
 
 func (s *GamesService) Join(gameID, userID string) error {

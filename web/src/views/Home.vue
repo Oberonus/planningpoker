@@ -11,6 +11,7 @@
       </v-container>
     </v-row>
     <UserNameDialog ref="userNameDialog"></UserNameDialog>
+    <NewGameDialog ref="newGameDialog"></NewGameDialog>
   </v-container>
 </template>
 
@@ -19,6 +20,7 @@
 import game from "@/models/game"
 import user from "@/models/user"
 import UserNameDialog from "@/components/UserNameDialog";
+import NewGameDialog from "@/components/GameSettingsDialog"
 
 export default {
   data: () => {
@@ -28,7 +30,8 @@ export default {
   },
 
   components: {
-    UserNameDialog
+    UserNameDialog,
+    NewGameDialog
   },
 
   methods: {
@@ -38,9 +41,14 @@ export default {
       }
       await user.authenticate()
 
-      await this.$router.push({
+      const [result, gameName, gameURL] = await this.$refs.newGameDialog.open()
+      if (!result) {
+        return
+      }
+
+      this.$router.push({
         name: 'Games',
-        params: {id: await game.create()},
+        params: {id: await game.create(gameName, gameURL)},
       })
     }
   }

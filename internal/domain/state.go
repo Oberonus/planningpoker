@@ -6,6 +6,8 @@ type PlayerState struct {
 }
 
 type GameState struct {
+	Name      string
+	TicketURL string
 	ChangeID  string
 	Cards     []string
 	Players   []PlayerState
