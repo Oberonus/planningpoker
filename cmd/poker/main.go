@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"planningpoker/internal/domain"
+	"planningpoker/internal/domain/users"
 	"planningpoker/internal/http"
 	"planningpoker/internal/repository"
 
@@ -19,7 +20,7 @@ func main() {
 		log.Fatalf("unable to create games service: %v", err)
 	}
 
-	usersService, err := domain.NewUsersService(usersRepo)
+	usersService, err := users.NewService(usersRepo)
 	if err != nil {
 		log.Fatalf("unable to create users service: %v", err)
 	}

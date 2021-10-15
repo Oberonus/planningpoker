@@ -2,7 +2,7 @@ package repository
 
 import (
 	"encoding/json"
-	"planningpoker/internal/domain"
+	"planningpoker/internal/domain/users"
 	"sync"
 )
 
@@ -23,7 +23,7 @@ func NewMemoryUserRepository() *MemoryUserRepository {
 	}
 }
 
-func (r *MemoryUserRepository) Get(id string) (*domain.User, error) {
+func (r *MemoryUserRepository) Get(id string) (*users.User, error) {
 	r.m.RLock()
 	raw, ok := r.users[id]
 	r.m.RUnlock()
@@ -38,16 +38,11 @@ func (r *MemoryUserRepository) Get(id string) (*domain.User, error) {
 		return nil, err
 	}
 
-	user := domain.User{
-		ID:    dto.ID,
-		Name:  dto.Name,
-	}
-
-	return &user, nil
+	return users.NewRaw(dto.ID, dto.Name), nil
 }
 
-func (r *MemoryUserRepository) GetMany(ids []string) ([]*domain.User, error) {
-	users := make([]*domain.User, 0, len(ids))
+func (r *MemoryUserRepository) GetMany(ids []string) ([]users.User, error) {
+	list := make([]users.User, 0, len(ids))
 	for _, id := range ids {
 		u, err := r.Get(id)
 		if err != nil {
@@ -56,16 +51,16 @@ func (r *MemoryUserRepository) GetMany(ids []string) ([]*domain.User, error) {
 		if u == nil {
 			continue
 		}
-		users = append(users, u)
+		list = append(list, *u)
 	}
 
-	return users, nil
+	return list, nil
 }
 
-func (r *MemoryUserRepository) Save(user *domain.User) error {
+func (r *MemoryUserRepository) Save(user users.User) error {
 	dto := userDTO{
-		ID:    user.ID,
-		Name:  user.Name,
+		ID:   user.ID(),
+		Name: user.Name(),
 	}
 
 	raw, err := json.Marshal(dto)
@@ -75,7 +70,7 @@ func (r *MemoryUserRepository) Save(user *domain.User) error {
 
 	r.m.Lock()
 	defer r.m.Unlock()
-	r.users[user.ID] = raw
+	r.users[user.ID()] = raw
 
 	return nil
 }

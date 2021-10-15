@@ -5,12 +5,12 @@
         <v-btn icon href="/">
           <v-icon>mdi-home</v-icon>
         </v-btn>
-        <v-btn v-if="state.TicketURL" :depressed="true" :ripple="false"
-               :href="state.TicketURL" target="_blank">
-          <span>{{ state.Name ? state.Name : state.TicketURL }}</span>
+        <v-btn v-if="state.ticket_url" :depressed="true" :ripple="false"
+               :href="state.ticket_url" target="_blank">
+          <span>{{ state.name ? state.name : state.ticket_url }}</span>
         </v-btn>
-        <v-btn v-if="!state.TicketURL && state.Name" :depressed="true" :ripple="false" target="_blank">
-          <span>{{ state.Name }}</span>
+        <v-btn v-if="!state.ticket_url && state.name" :depressed="true" :ripple="false" target="_blank">
+          <span>{{ state.name }}</span>
         </v-btn>
         <v-btn icon @click="changeGameParams">
           <v-icon>mdi-cog</v-icon>
@@ -35,8 +35,8 @@
     </v-row>
 
     <v-row align="center" justify="center" v-if="state">
-      <card-on-table v-for="player in state.players()" v-bind:key="player.Name" :name="player.Name"
-                     :card="player.VotedCard"></card-on-table>
+      <card-on-table v-for="player in state.getPlayers()" v-bind:key="player.name" :name="player.name"
+                     :card="player.voted_card"></card-on-table>
     </v-row>
 
     <v-row align="center" justify="center" v-if="state" style="min-height: 100px;">
@@ -46,7 +46,7 @@
     </v-row>
 
     <v-row align="center" justify="center" v-if="state" v-show="state.isRunning()" style="min-height: 100px;">
-      <Card v-for="card in state.cards()"
+      <Card v-for="card in state.getCards()"
             v-bind:key="card"
             @click="state.vote(card)"
             :active="state.isActive(card)"
@@ -118,11 +118,12 @@ export default {
       const name = await this.$refs.userNameDialog.openModify(user.name)
       if (name !== "") {
         await user.update(name)
+        user.name = name
       }
     },
 
     async changeGameParams() {
-      const [ok, name, url] = await this.$refs.gameSettingsDialog.openModify(this.state.Name, this.state.TicketURL)
+      const [ok, name, url] = await this.$refs.gameSettingsDialog.openModify(this.state.name, this.state.ticket_url)
       if (!ok) {
         return
       }

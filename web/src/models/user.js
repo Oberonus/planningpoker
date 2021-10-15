@@ -6,7 +6,6 @@ export default {
     id: "",
 
     identified() {
-        console.log(`user name === '${this.name}'`)
         return this.name !== undefined && this.name !== "" && this.name != null
     },
 

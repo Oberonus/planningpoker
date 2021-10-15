@@ -1,10 +1,17 @@
 import axios from 'axios'
 
+const cardsDeck = {
+    name: "T-Shirt",
+    types: ["XXS", "XS", "S", "M", "L", "XL", "XXL", "?"]
+}
+
 export default {
     async create(name, url) {
         const resp = await axios.post("games", {
             name: name,
             url: url,
+            cards_deck: cardsDeck,
+            everyone_can_reveal: true,
         })
         return resp.data.game_id
     },

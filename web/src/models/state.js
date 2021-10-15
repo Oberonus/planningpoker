@@ -7,46 +7,49 @@ export default class {
     workerID;
 
     id;
-    Name;
-    TicketURL;
-    State;
-    Cards;
-    Players;
-    VotedCard;
-    CanReveal;
-    ChangeID;
+    name;
+    ticket_url;
+    state;
+    cards_deck;
+    players;
+    voted_card;
+    can_reveal;
+    change_id;
 
     constructor(id) {
         this.id = id
         this.updatePeriodically()
     }
 
-    cards() {
-        return this.Cards
+    getCards() {
+        if (this.cards_deck) {
+            return this.cards_deck.cards
+        }
+        return []
     }
 
     isRunning() {
-        return this.State === stateRunning
+        return this.state === stateRunning
     }
 
     isFinished() {
-        return this.State === stateFinished
+        return this.state === stateFinished
     }
 
-    players() {
-        return this.Players
+    getPlayers() {
+        return this.players
     }
 
     canReveal() {
-        return this.CanReveal && this.State === stateRunning
+        return this.can_reveal && this.state === stateRunning
     }
 
     canRestart() {
-        return this.CanReveal && this.State === stateFinished
+        return this.can_reveal && this.state === stateFinished
     }
 
     isActive(card) {
-        return this.VotedCard === card
+        return this.voted_card === card
     }
 
     async reveal() {
@@ -58,12 +61,12 @@ export default class {
     }
 
     async vote(card) {
-        if (this.VotedCard === card) {
-            this.VotedCard = ""
+        if (this.voted_card === card) {
+            this.voted_card = ""
             await game.unVote(this.id)
         } else {
             card = encodeURIComponent(card)
-            this.VotedCard = card
+            this.voted_card = card
             await game.vote(this.id, card)
         }
     }
@@ -88,19 +91,19 @@ export default class {
     }
 
     async update() {
-        const state = await game.state(this.id, this.ChangeID)
+        const state = await game.state(this.id, this.change_id)
         for (const attribute in state) {
             this[attribute] = state[attribute];
         }
-        this.Players && this.Players.sort(comparePlayers)
+        this.players && this.players.sort(comparePlayers)
     }
 }
 
 function comparePlayers(a, b) {
-    if (a.Name < b.Name) {
+    if (a.name < b.name) {
         return -1;
     }
-    if (a.Name > b.Name) {
+    if (a.name > b.name) {
         return 1;
     }
     return 0;

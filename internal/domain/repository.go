@@ -1,5 +1,7 @@
 package domain
 
+import "planningpoker/internal/domain/users"
+
 type GameRepository interface {
 	ModifyExclusively(id string, cb func(game *Game) error) error
 	Get(id string) (*Game, error)
@@ -7,7 +9,5 @@ type GameRepository interface {
 }
 
 type UsersRepository interface {
-	Get(id string) (*User, error)
-	GetMany(ids []string) ([]*User, error)
-	Save(user *User) error
+	GetMany(ids []string) ([]users.User, error)
 }

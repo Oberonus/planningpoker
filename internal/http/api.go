@@ -2,20 +2,37 @@ package http
 
 import (
 	"errors"
+	"planningpoker/internal/domain"
+	"planningpoker/internal/domain/users"
 	"strings"
 	"time"
-
-	"planningpoker/internal/domain"
 
 	"github.com/gin-gonic/gin"
 )
 
-type API struct {
-	gamesService *domain.GamesService
-	usersService *domain.UsersService
+type GamesService interface {
+	Create(cmd domain.CreateGameCommand) (string, error)
+	Update(cmd domain.UpdateGameCommand) error
+	Join(cmd domain.JoinGameCommand) error
+	Vote(cmd domain.VoteCommand) error
+	UnVote(cmd domain.UnVoteCommand) error
+	Reveal(cmd domain.RevealCardsCommand) error
+	Restart(cmd domain.RestartGameCommand) error
+	GameState(cmd domain.GameStateCommand) (*domain.GameState, error)
 }
 
-func NewAPI(gs *domain.GamesService, us *domain.UsersService) (*API, error) {
+type UsersService interface {
+	Register(cmd users.RegisterCommand) (*users.User, error)
+	Update(cmd users.UpdateCommand) (*users.User, error)
+	AuthenticateByID(cmd users.AuthByIDCommand) (*users.User, error)
+}
+
+type API struct {
+	gamesService GamesService
+	usersService *users.Service
+}
+
+func NewAPI(gs GamesService, us *users.Service) (*API, error) {
 	if gs == nil {
 		return nil, errors.New("games service should be provided")
 	}
@@ -53,14 +70,20 @@ func (h *API) Register(c *gin.Context) {
 		return
 	}
 
-	user, err := h.usersService.Register(pl.Name)
+	cmd, err := users.NewRegisterCommand(pl.Name)
+	if err != nil {
+		badRequestError(c, err)
+		return
+	}
+
+	user, err := h.usersService.Register(*cmd)
 	if err != nil {
 		badRequestError(c, err)
 		return
 	}
 
 	success(c, gin.H{
-		"user_id": user.ID,
+		"user_id": user.ID(),
 	})
 }
 
@@ -71,7 +94,7 @@ func (h *API) CurrentUser(c *gin.Context) {
 	}
 
 	success(c, gin.H{
-		"name": user.Name,
+		"name": user.Name(),
 	})
 }
 
@@ -89,7 +112,13 @@ func (h *API) ChangeUserData(c *gin.Context) {
 		return
 	}
 
-	_, err := h.usersService.Update(user.ID, pl.Name)
+	cmd, err := users.NewUpdateCommand(user.ID(), pl.Name)
+	if err != nil {
+		badRequestError(c, err)
+		return
+	}
+
+	_, err = h.usersService.Update(*cmd)
 	if err != nil {
 		internalError(c, err)
 		return
@@ -101,6 +130,11 @@ func (h *API) ChangeUserData(c *gin.Context) {
 type gamePayload struct {
 	Name      string `json:"name"`
 	TicketURL string `json:"url"`
+	CardsDeck struct {
+		Name  string   `json:"name"`
+		Types []string `json:"types"`
+	} `json:"cards_deck"`
+	EveryoneCanReveal bool `json:"everyone_can_reveal"`
 }
 
 func (h *API) CreateGame(c *gin.Context) {
@@ -115,7 +149,23 @@ func (h *API) CreateGame(c *gin.Context) {
 		return
 	}
 
-	cmd, err := domain.NewCreateGameCommand(pl.Name, pl.TicketURL, user.ID)
+	cards := make([]domain.Card, len(pl.CardsDeck.Types))
+	for i, v := range pl.CardsDeck.Types {
+		card, err := domain.NewCard(v)
+		if err != nil {
+			badRequestError(c, err)
+			return
+		}
+		cards[i] = *card
+	}
+
+	deck, err := domain.NewCardsDeck(pl.CardsDeck.Name, cards)
+	if err != nil {
+		badRequestError(c, err)
+		return
+	}
+
+	cmd, err := domain.NewCreateGameCommand(pl.Name, pl.TicketURL, user.ID(), *deck, pl.EveryoneCanReveal)
 	if err != nil {
 		badRequestError(c, err)
 		return
@@ -145,7 +195,7 @@ func (h *API) UpdateGame(c *gin.Context) {
 		return
 	}
 
-	cmd, err := domain.NewUpdateGameCommand(gameID, pl.Name, pl.TicketURL, user.ID)
+	cmd, err := domain.NewUpdateGameCommand(gameID, pl.Name, pl.TicketURL, user.ID())
 	if err != nil {
 		badRequestError(c, err)
 		return
@@ -167,7 +217,13 @@ func (h *API) Join(c *gin.Context) {
 	}
 	gameID := c.Param("gameID")
 
-	err := h.gamesService.Join(gameID, user.ID)
+	cmd, err := domain.NewJoinGameCommand(gameID, user.ID())
+	if err != nil {
+		badRequestError(c, err)
+		return
+	}
+
+	err = h.gamesService.Join(*cmd)
 	if err != nil {
 		internalError(c, err)
 		return
@@ -184,7 +240,19 @@ func (h *API) Vote(c *gin.Context) {
 	gameID := c.Param("gameID")
 	vote := c.Param("vote")
 
-	err := h.gamesService.Vote(gameID, user.ID, vote)
+	card, err := domain.NewCard(vote)
+	if err != nil {
+		badRequestError(c, err)
+		return
+	}
+
+	cmd, err := domain.NewVoteCommand(gameID, user.ID(), *card)
+	if err != nil {
+		badRequestError(c, err)
+		return
+	}
+
+	err = h.gamesService.Vote(*cmd)
 	if err != nil {
 		internalError(c, err)
 		return
@@ -200,13 +268,76 @@ func (h *API) UnVote(c *gin.Context) {
 	}
 	gameID := c.Param("gameID")
 
-	err := h.gamesService.UnVote(gameID, user.ID)
+	cmd, err := domain.NewUnVoteCommand(gameID, user.ID())
+	if err != nil {
+		badRequestError(c, err)
+		return
+	}
+
+	err = h.gamesService.UnVote(*cmd)
 	if err != nil {
 		internalError(c, err)
 		return
 	}
 
 	success(c, nil)
+}
+
+type playerStateResponse struct {
+	Name      string `json:"name"`
+	VotedCard string `json:"voted_card"`
+}
+
+func newPlayerStateResponse(state domain.PlayerState) playerStateResponse {
+	resp := playerStateResponse{
+		Name: state.Name,
+	}
+	if state.VotedCard != nil {
+		resp.VotedCard = state.VotedCard.Type()
+	}
+	return resp
+}
+
+type cardsDeckResponse struct {
+	Name  string   `json:"name"`
+	Cards []string `json:"cards"`
+}
+
+func newCardsDeckResponse(cd domain.CardsDeck) cardsDeckResponse {
+	resp := cardsDeckResponse{Name: cd.Name()}
+	for _, c := range cd.Cards() {
+		resp.Cards = append(resp.Cards, c.Type())
+	}
+	return resp
+}
+
+type gameStateResponse struct {
+	Name      string                `json:"name"`
+	TicketURL string                `json:"ticket_url"`
+	ChangeID  string                `json:"change_id"`
+	CardsDeck cardsDeckResponse     `json:"cards_deck"`
+	Players   []playerStateResponse `json:"players"`
+	State     string                `json:"state"`
+	VotedCard string                `json:"voted_card"`
+	CanReveal bool                  `json:"can_reveal"`
+}
+
+func newGameStateResponse(state domain.GameState) gameStateResponse {
+	resp := gameStateResponse{
+		Name:      state.Name,
+		TicketURL: state.TicketURL,
+		ChangeID:  state.ChangeID,
+		CardsDeck: newCardsDeckResponse(state.CardsDeck),
+		State:     state.State,
+		CanReveal: state.CanReveal,
+	}
+	if state.VotedCard != nil {
+		resp.VotedCard = state.VotedCard.Type()
+	}
+	for _, p := range state.Players {
+		resp.Players = append(resp.Players, newPlayerStateResponse(p))
+	}
+	return resp
 }
 
 func (h *API) GameState(c *gin.Context) {
@@ -217,13 +348,19 @@ func (h *API) GameState(c *gin.Context) {
 	gameID := c.Param("gameID")
 	lastChangeID := c.Query("lastChangeID")
 
-	state, err := h.gamesService.GameState(gameID, user.ID, 5*time.Second, lastChangeID)
+	cmd, err := domain.NewGameStateCommand(gameID, user.ID(), 5*time.Second, lastChangeID)
+	if err != nil {
+		badRequestError(c, err)
+		return
+	}
+
+	state, err := h.gamesService.GameState(*cmd)
 	if err != nil {
 		internalError(c, err)
 		return
 	}
 
-	success(c, state)
+	success(c, newGameStateResponse(*state))
 }
 
 func (h *API) RestartGame(c *gin.Context) {
@@ -233,7 +370,13 @@ func (h *API) RestartGame(c *gin.Context) {
 	}
 	gameID := c.Param("gameID")
 
-	err := h.gamesService.Restart(gameID, user.ID)
+	cmd, err := domain.NewRestartGameCommand(gameID, user.ID())
+	if err != nil {
+		badRequestError(c, err)
+		return
+	}
+
+	err = h.gamesService.Restart(*cmd)
 	if err != nil {
 		internalError(c, err)
 		return
@@ -249,7 +392,13 @@ func (h *API) RevealCards(c *gin.Context) {
 	}
 	gameID := c.Param("gameID")
 
-	err := h.gamesService.Reveal(gameID, user.ID)
+	cmd, err := domain.NewRevealCardsCommand(gameID, user.ID())
+	if err != nil {
+		badRequestError(c, err)
+		return
+	}
+
+	err = h.gamesService.Reveal(*cmd)
 	if err != nil {
 		internalError(c, err)
 		return
@@ -258,7 +407,7 @@ func (h *API) RevealCards(c *gin.Context) {
 	success(c, nil)
 }
 
-func (h *API) authenticate(c *gin.Context) *domain.User {
+func (h *API) authenticate(c *gin.Context) *users.User {
 	auth := c.GetHeader("Authorization")
 	parts := strings.Split(auth, " ")
 	if len(parts) != 2 || parts[0] != "Bearer" {
@@ -266,7 +415,13 @@ func (h *API) authenticate(c *gin.Context) *domain.User {
 		return nil
 	}
 
-	user, err := h.usersService.AuthenticateByID(parts[1])
+	cmd, err := users.NewAuthByIDCommand(parts[1])
+	if err != nil {
+		badRequestError(c, err)
+		return nil
+	}
+
+	user, err := h.usersService.AuthenticateByID(*cmd)
 	if err != nil {
 		unauthorizedError(c, err)
 		return nil

@@ -26,9 +26,14 @@ func NewGamesService(gr GameRepository, ur UsersRepository) (*GamesService, erro
 }
 
 func (s *GamesService) Create(cmd CreateGameCommand) (string, error) {
-	game := NewTShirtGame(cmd)
+	game := NewGame(cmd)
 
-	if err := game.Join(cmd.UserID); err != nil {
+	joinCmd, err := NewJoinGameCommand(game.ID, cmd.UserID)
+	if err != nil {
+		return "", err
+	}
+
+	if err := game.Join(*joinCmd); err != nil {
 		return "", err
 	}
 	if err := s.gamesRepo.Save(game); err != nil {
@@ -44,73 +49,52 @@ func (s *GamesService) Update(cmd UpdateGameCommand) error {
 	})
 }
 
-func (s *GamesService) Join(gameID, userID string) error {
-	return s.gamesRepo.ModifyExclusively(gameID, func(game *Game) error {
-		return game.Join(userID)
+func (s *GamesService) Join(cmd JoinGameCommand) error {
+	return s.gamesRepo.ModifyExclusively(cmd.GameID, func(game *Game) error {
+		return game.Join(cmd)
 	})
 }
 
-func (s *GamesService) Restart(gameID, userID string) error {
-	return s.gamesRepo.ModifyExclusively(gameID, func(game *Game) error {
-		return game.Restart(userID)
+func (s *GamesService) Restart(cmd RestartGameCommand) error {
+	return s.gamesRepo.ModifyExclusively(cmd.GameID, func(game *Game) error {
+		return game.Restart(cmd)
 	})
 }
 
-func (s *GamesService) Vote(gameID, userID, vote string) error {
-	return s.gamesRepo.ModifyExclusively(gameID, func(game *Game) error {
-		return game.Vote(userID, vote)
+func (s *GamesService) Vote(cmd VoteCommand) error {
+	return s.gamesRepo.ModifyExclusively(cmd.GameID, func(game *Game) error {
+		return game.Vote(cmd)
 	})
 }
 
-func (s *GamesService) UnVote(gameID, userID string) error {
-	return s.gamesRepo.ModifyExclusively(gameID, func(game *Game) error {
-		return game.UnVote(userID)
+func (s *GamesService) UnVote(cmd UnVoteCommand) error {
+	return s.gamesRepo.ModifyExclusively(cmd.GameID, func(game *Game) error {
+		return game.UnVote(cmd)
 	})
 }
 
-func (s *GamesService) Leave(gameID, userID, vote string) error {
-	return s.gamesRepo.ModifyExclusively(gameID, func(game *Game) error {
-		return game.Leave(userID)
+func (s *GamesService) Reveal(cmd RevealCardsCommand) error {
+	return s.gamesRepo.ModifyExclusively(cmd.GameID, func(game *Game) error {
+		return game.Reveal(cmd)
 	})
 }
 
-func (s *GamesService) Reveal(gameID, userID string) error {
-	return s.gamesRepo.ModifyExclusively(gameID, func(game *Game) error {
-		return game.Reveal(userID)
-	})
-}
-
-func (s *GamesService) GameState(gameID string, userID string, timeout time.Duration, lastKnownStateID string) (*GameState, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+func (s *GamesService) GameState(cmd GameStateCommand) (*GameState, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), cmd.WaitFor)
 	defer cancel()
 
 	var game *Game
-	err := s.gamesRepo.ModifyExclusively(gameID, func(g *Game) error {
+	err := s.gamesRepo.ModifyExclusively(cmd.GameID, func(g *Game) error {
 		game = g
-		return g.Ping(userID)
+		return g.Ping(cmd.UserID)
 	})
 	if err != nil {
 		return nil, err
 	}
 
-pollingLoop:
-	for {
-		select {
-		case <-ctx.Done():
-			break pollingLoop
-		default:
-		}
-
-		if game.ChangeID != lastKnownStateID {
-			break
-		}
-
-		time.Sleep(100 * time.Millisecond)
-
-		game, err = s.gamesRepo.Get(gameID)
-		if err != nil {
-			return nil, err
-		}
+	game, err = s.getUpdatedState(ctx, cmd.GameID, cmd.LastChangeID)
+	if err != nil {
+		return nil, err
 	}
 
 	userIDs := make([]string, 0)
@@ -123,10 +107,26 @@ pollingLoop:
 		return nil, err
 	}
 
-	mapUsers := make(map[string]*User)
-	for _, u := range users {
-		mapUsers[u.ID] = u
-	}
+	state := NewStateForGame(cmd.UserID, *game, users)
 
-	return game.CurrentState(userID, mapUsers), nil
+	return &state, nil
+}
+
+func (s *GamesService) getUpdatedState(ctx context.Context, gameID, lastKnownStateID string) (*Game, error) {
+	for {
+		game, err := s.gamesRepo.Get(gameID)
+		if err != nil {
+			return nil, err
+		}
+
+		if game.ChangeID != lastKnownStateID {
+			return game, nil
+		}
+
+		select {
+		case <-ctx.Done():
+			return game, nil
+		case <-time.After(100 * time.Millisecond):
+		}
+	}
 }
