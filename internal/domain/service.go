@@ -3,6 +3,8 @@ package domain
 import (
 	"context"
 	"errors"
+	"fmt"
+	"planningpoker/internal/domain/events"
 	"time"
 )
 
@@ -11,18 +13,24 @@ type GamesService struct {
 	usersRepo UsersRepository
 }
 
-func NewGamesService(gr GameRepository, ur UsersRepository) (*GamesService, error) {
+func NewGamesService(gr GameRepository, ur UsersRepository, eb events.EventBus) (*GamesService, error) {
 	if gr == nil {
 		return nil, errors.New("games repository should be provided")
 	}
 	if ur == nil {
 		return nil, errors.New("users repository should be provided")
 	}
+	if eb == nil {
+		return nil, errors.New("event bus should be provided")
+	}
 
-	return &GamesService{
+	gs := &GamesService{
 		gamesRepo: gr,
 		usersRepo: ur,
-	}, nil
+	}
+	eb.Subscribe(gs.ProcessUserUpdated, events.EventTypeUserUpdated)
+
+	return gs, nil
 }
 
 func (s *GamesService) Create(cmd CreateGameCommand) (string, error) {
@@ -110,6 +118,23 @@ func (s *GamesService) GameState(cmd GameStateCommand) (*GameState, error) {
 	state := NewStateForGame(cmd.UserID, *game, users)
 
 	return &state, nil
+}
+
+func (s *GamesService) ProcessUserUpdated(e events.DomainEvent) {
+	list, err := s.gamesRepo.GetActiveGamesByPlayerID(e.AggregateID())
+	if err != nil {
+		fmt.Printf("error fetching games for player id=%s: %v", e.AggregateID(), err)
+	}
+
+	for _, g := range list {
+		err := s.gamesRepo.ModifyExclusively(g.ID, func(g *Game) error {
+			g.ForceChanged()
+			return nil
+		})
+		if err != nil {
+			fmt.Printf("no way to update game, will be updated eventually")
+		}
+	}
 }
 
 func (s *GamesService) getUpdatedState(ctx context.Context, gameID, lastKnownStateID string) (*Game, error) {

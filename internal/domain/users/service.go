@@ -3,19 +3,25 @@ package users
 import (
 	"errors"
 	"fmt"
+	"planningpoker/internal/domain/events"
 )
 
 type Service struct {
 	usersRepo Repository
+	eventBus  events.EventBus
 }
 
-func NewService(ur Repository) (*Service, error) {
+func NewService(ur Repository, eb events.EventBus) (*Service, error) {
 	if ur == nil {
 		return nil, errors.New("users repository should be provided")
+	}
+	if eb == nil {
+		return nil, errors.New("event bus should be provided")
 	}
 
 	return &Service{
 		usersRepo: ur,
+		eventBus:  eb,
 	}, nil
 }
 
@@ -48,6 +54,12 @@ func (s *Service) Update(cmd UpdateCommand) (*User, error) {
 
 	if err := s.usersRepo.Save(*u); err != nil {
 		return nil, err
+	}
+
+	// current implementation provides at-most-once delivery guarantees.
+	err = s.eventBus.Publish(events.NewDomainEventBuilder(events.EventTypeUserUpdated).ForAggregate(u.ID()).Build())
+	if err != nil {
+		fmt.Printf("failed to publish 'user updated' domain event for user id=%s", u.ID())
 	}
 
 	return u, nil

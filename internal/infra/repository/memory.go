@@ -46,6 +46,24 @@ type playerDTO struct {
 	LastPing  time.Time `json:"last_ping"`
 }
 
+func (d playerDTO) ToDomain() (*domain.Player, error) {
+	var votedCard *domain.Card
+	var err error
+
+	if d.VotedCard != "" {
+		votedCard, err = domain.NewCard(d.VotedCard)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &domain.Player{
+		VotedCard: votedCard,
+		CanReveal: d.CanReveal,
+		LastPing:  d.LastPing,
+	}, nil
+}
+
 type gameDTO struct {
 	ID                string               `json:"id"`
 	Name              string               `json:"name"`
@@ -55,6 +73,33 @@ type gameDTO struct {
 	State             string               `json:"state"`
 	ChangeID          string               `json:"change_id"`
 	EveryoneCanReveal bool                 `json:"everyone_can_reveal"`
+}
+
+func (d gameDTO) ToDomain() (*domain.Game, error) {
+	game := &domain.Game{
+		ID:                d.ID,
+		Name:              d.Name,
+		TicketURL:         d.TicketURL,
+		Players:           make(map[string]*domain.Player),
+		State:             d.State,
+		ChangeID:          d.ChangeID,
+		EveryoneCanReveal: d.EveryoneCanReveal,
+	}
+
+	deck, err := d.CardsDeck.ToDomain()
+	if err != nil {
+		return nil, err
+	}
+	game.CardsDeck = *deck
+
+	for i, p := range d.Players {
+		game.Players[i], err = p.ToDomain()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return game, err
 }
 
 type MemoryGameRepository struct {
@@ -145,37 +190,34 @@ func (r *MemoryGameRepository) Get(id string) (*domain.Game, error) {
 		return nil, err
 	}
 
-	game := domain.Game{
-		ID:                dto.ID,
-		Name:              dto.Name,
-		TicketURL:         dto.TicketURL,
-		Players:           make(map[string]*domain.Player),
-		State:             dto.State,
-		ChangeID:          dto.ChangeID,
-		EveryoneCanReveal: dto.EveryoneCanReveal,
-	}
+	return dto.ToDomain()
+}
 
-	deck, err := dto.CardsDeck.ToDomain()
-	if err != nil {
-		return nil, err
-	}
-	game.CardsDeck = *deck
+func (r *MemoryGameRepository) GetActiveGamesByPlayerID(playerID string) ([]domain.Game, error) {
+	r.m.RLock()
+	defer r.m.RUnlock()
 
-	for i, p := range dto.Players {
-		var votedCard *domain.Card
-		if p.VotedCard != "" {
-			votedCard, err = domain.NewCard(p.VotedCard)
-			if err != nil {
-				return nil, err
-			}
+	list := make([]domain.Game, 0)
+	for _, j := range r.games {
+		dto := gameDTO{}
+		err := json.Unmarshal(j, &dto)
+		if err != nil {
+			return nil, err
+		}
+		if dto.State != domain.GameStateStarted {
+			continue
+		}
+		if _, ok := dto.Players[playerID]; !ok {
+			continue
 		}
 
-		game.Players[i] = &domain.Player{
-			VotedCard: votedCard,
-			CanReveal: p.CanReveal,
-			LastPing:  p.LastPing,
+		g, err := dto.ToDomain()
+		if err != nil {
+			return nil, err
 		}
+
+		list = append(list, *g)
 	}
 
-	return &game, nil
+	return list, nil
 }

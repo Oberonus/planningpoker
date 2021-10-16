@@ -4,8 +4,9 @@ import (
 	"log"
 	"planningpoker/internal/domain"
 	"planningpoker/internal/domain/users"
-	"planningpoker/internal/http"
-	"planningpoker/internal/repository"
+	"planningpoker/internal/infra/eventbus"
+	"planningpoker/internal/infra/http"
+	"planningpoker/internal/infra/repository"
 
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
@@ -14,13 +15,14 @@ import (
 func main() {
 	gamesRepo := repository.NewMemoryGameRepository()
 	usersRepo := repository.NewMemoryUserRepository()
+	eventBus := eventbus.NewInternalBus()
 
-	gamesService, err := domain.NewGamesService(gamesRepo, usersRepo)
+	gamesService, err := domain.NewGamesService(gamesRepo, usersRepo, eventBus)
 	if err != nil {
 		log.Fatalf("unable to create games service: %v", err)
 	}
 
-	usersService, err := users.NewService(usersRepo)
+	usersService, err := users.NewService(usersRepo, eventBus)
 	if err != nil {
 		log.Fatalf("unable to create users service: %v", err)
 	}

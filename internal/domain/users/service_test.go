@@ -2,6 +2,7 @@ package users_test
 
 import (
 	"errors"
+	"planningpoker/internal/domain/events"
 	"planningpoker/internal/domain/users"
 	"testing"
 
@@ -14,13 +15,20 @@ func TestNewService(t *testing.T) {
 
 	testCases := map[string]struct {
 		usersRepo users.Repository
+		eventBus  events.EventBus
 		expError  string
 	}{
 		"success": {
 			usersRepo: usersRepoStub{},
+			eventBus:  eventBusStub{},
 		},
 		"failed on no repository": {
+			eventBus: eventBusStub{},
 			expError: "users repository should be provided",
+		},
+		"failed on no eventbus": {
+			usersRepo: usersRepoStub{},
+			expError:  "event bus should be provided",
 		},
 	}
 
@@ -29,7 +37,7 @@ func TestNewService(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			srv, err := users.NewService(tt.usersRepo)
+			srv, err := users.NewService(tt.usersRepo, tt.eventBus)
 
 			if tt.expError != "" {
 				assert.EqualError(t, err, tt.expError)
@@ -71,7 +79,7 @@ func TestService_Register(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			srv, err := users.NewService(tt.usersRepo)
+			srv, err := users.NewService(tt.usersRepo, eventBusStub{})
 			require.NoError(t, err)
 
 			cmd, err := users.NewRegisterCommand(tt.name)
@@ -139,7 +147,7 @@ func TestService_Update(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			srv, err := users.NewService(tt.usersRepo)
+			srv, err := users.NewService(tt.usersRepo, eventBusStub{})
 			require.NoError(t, err)
 
 			cmd, err := users.NewUpdateCommand(uid, tt.name)
@@ -188,7 +196,7 @@ func TestService_AuthenticateByID(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			srv, err := users.NewService(tt.usersRepo)
+			srv, err := users.NewService(tt.usersRepo, eventBusStub{})
 			require.NoError(t, err)
 
 			cmd, err := users.NewAuthByIDCommand(uid)
@@ -226,4 +234,14 @@ func (u usersRepoStub) GetMany([]string) ([]users.User, error) {
 
 func (u usersRepoStub) Save(users.User) error {
 	return u.saveErr
+}
+
+type eventBusStub struct{}
+
+func (e eventBusStub) Publish(events.DomainEvent) error {
+	return nil
+}
+
+func (e eventBusStub) Subscribe(events.Consumer, ...string) {
+	return
 }

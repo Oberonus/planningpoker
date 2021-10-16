@@ -144,6 +144,10 @@ func (g *Game) UnVote(cmd UnVoteCommand) error {
 	return nil
 }
 
+func (g *Game) ForceChanged() {
+	g.setChanged()
+}
+
 func (g *Game) isPlayer(uid string) bool {
 	_, ok := g.Players[uid]
 	return ok

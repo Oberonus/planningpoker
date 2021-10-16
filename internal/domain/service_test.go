@@ -3,6 +3,7 @@ package domain_test
 import (
 	"errors"
 	"planningpoker/internal/domain"
+	"planningpoker/internal/domain/events"
 	"planningpoker/internal/domain/users"
 	"testing"
 	"time"
@@ -37,7 +38,7 @@ func TestNewGame(t *testing.T) {
 		tt := tt
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			srv, err := domain.NewGamesService(tt.gameRepo, tt.userRepo)
+			srv, err := domain.NewGamesService(tt.gameRepo, tt.userRepo, eventBusStub{})
 
 			if tt.expError != "" {
 				assert.EqualError(t, err, tt.expError)
@@ -74,7 +75,7 @@ func TestGamesService_Create(t *testing.T) {
 		tt := tt
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			srv, err := domain.NewGamesService(tt.gameRepo, tt.userRepo)
+			srv, err := domain.NewGamesService(tt.gameRepo, tt.userRepo, eventBusStub{})
 			require.NoError(t, err)
 
 			cmd, err := domain.NewCreateGameCommand("foo", "http://example.com", User1, newTestDeck(t), true)
@@ -117,7 +118,7 @@ func TestGamesService_Update(t *testing.T) {
 		tt := tt
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			srv, err := domain.NewGamesService(tt.gameRepo, tt.userRepo)
+			srv, err := domain.NewGamesService(tt.gameRepo, tt.userRepo, eventBusStub{})
 			require.NoError(t, err)
 
 			cmd, err := domain.NewUpdateGameCommand("anything", "new name", "https://ex.com", User1)
@@ -159,7 +160,7 @@ func TestGamesService_Restart(t *testing.T) {
 		tt := tt
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			srv, err := domain.NewGamesService(tt.gameRepo, tt.userRepo)
+			srv, err := domain.NewGamesService(tt.gameRepo, tt.userRepo, eventBusStub{})
 			require.NoError(t, err)
 
 			cmd, err := domain.NewRestartGameCommand("anything", User1)
@@ -202,7 +203,7 @@ func TestGamesService_Vote(t *testing.T) {
 		tt := tt
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			srv, err := domain.NewGamesService(tt.gameRepo, tt.userRepo)
+			srv, err := domain.NewGamesService(tt.gameRepo, tt.userRepo, eventBusStub{})
 			require.NoError(t, err)
 
 			cmd, err := domain.NewVoteCommand("anything", User1, *card)
@@ -243,7 +244,7 @@ func TestGamesService_UnVote(t *testing.T) {
 		tt := tt
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			srv, err := domain.NewGamesService(tt.gameRepo, tt.userRepo)
+			srv, err := domain.NewGamesService(tt.gameRepo, tt.userRepo, eventBusStub{})
 			require.NoError(t, err)
 
 			cmd, err := domain.NewUnVoteCommand("anything", User1)
@@ -279,7 +280,7 @@ func TestGamesService_Join(t *testing.T) {
 		tt := tt
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			srv, err := domain.NewGamesService(tt.gameRepo, tt.userRepo)
+			srv, err := domain.NewGamesService(tt.gameRepo, tt.userRepo, eventBusStub{})
 			require.NoError(t, err)
 
 			cmd, err := domain.NewJoinGameCommand("anything", User2)
@@ -320,7 +321,7 @@ func TestGamesService_Reveal(t *testing.T) {
 		tt := tt
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			srv, err := domain.NewGamesService(tt.gameRepo, tt.userRepo)
+			srv, err := domain.NewGamesService(tt.gameRepo, tt.userRepo, eventBusStub{})
 			require.NoError(t, err)
 
 			cmd, err := domain.NewRevealCardsCommand("anything", User1)
@@ -374,7 +375,7 @@ func TestGamesService_GameState(t *testing.T) {
 		tt := tt
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			srv, err := domain.NewGamesService(tt.gameRepo, tt.userRepo)
+			srv, err := domain.NewGamesService(tt.gameRepo, tt.userRepo, eventBusStub{})
 			require.NoError(t, err)
 
 			cmd, err := domain.NewGameStateCommand("anything", User1, time.Millisecond, "")
@@ -395,9 +396,11 @@ func TestGamesService_GameState(t *testing.T) {
 }
 
 type gamesRepoStub struct {
-	game      *domain.Game
-	getErr    error
-	saveError error
+	game              *domain.Game
+	getErr            error
+	saveError         error
+	activeGames       []domain.Game
+	getActiveGamesErr error
 }
 
 func (g gamesRepoStub) ModifyExclusively(_ string, cb func(game *domain.Game) error) error {
@@ -412,6 +415,10 @@ func (g gamesRepoStub) Save(*domain.Game) error {
 	return g.saveError
 }
 
+func (g gamesRepoStub) GetActiveGamesByPlayerID(playerID string) ([]domain.Game, error) {
+	return g.activeGames, g.getActiveGamesErr
+}
+
 type usersRepoStub struct {
 	getManyErr error
 	manyUsers  []users.User
@@ -423,4 +430,14 @@ func (u usersRepoStub) GetMany([]string) ([]users.User, error) {
 
 func newTestServiceGame(t *testing.T) *testGame {
 	return NewTestGame(t, newSimpleGame(t, true))
+}
+
+type eventBusStub struct{}
+
+func (e eventBusStub) Publish(events.DomainEvent) error {
+	return nil
+}
+
+func (e eventBusStub) Subscribe(events.Consumer, ...string) {
+	return
 }

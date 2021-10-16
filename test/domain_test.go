@@ -3,7 +3,8 @@ package test
 import (
 	"planningpoker/internal/domain"
 	"planningpoker/internal/domain/users"
-	"planningpoker/internal/repository"
+	"planningpoker/internal/infra/eventbus"
+	"planningpoker/internal/infra/repository"
 	"testing"
 	"time"
 
@@ -14,12 +15,13 @@ import (
 func TestWorkflow(t *testing.T) {
 	gamesRepo := repository.NewMemoryGameRepository()
 	usersRepo := repository.NewMemoryUserRepository()
+	eventBus := eventbus.NewInternalBus()
 
-	gamesService, err := domain.NewGamesService(gamesRepo, usersRepo)
+	gamesService, err := domain.NewGamesService(gamesRepo, usersRepo, eventBus)
 	require.NoError(t, err)
 	require.NotNil(t, gamesService)
 
-	usersService, err := users.NewService(usersRepo)
+	usersService, err := users.NewService(usersRepo, eventBus)
 	require.NoError(t, err)
 	require.NotNil(t, usersService)
 
