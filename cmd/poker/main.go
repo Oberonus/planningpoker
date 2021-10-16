@@ -2,7 +2,8 @@ package main
 
 import (
 	"log"
-	"planningpoker/internal/domain"
+	"planningpoker/internal/domain/games"
+	"planningpoker/internal/domain/state"
 	"planningpoker/internal/domain/users"
 	"planningpoker/internal/infra/eventbus"
 	"planningpoker/internal/infra/http"
@@ -17,7 +18,7 @@ func main() {
 	usersRepo := repository.NewMemoryUserRepository()
 	eventBus := eventbus.NewInternalBus()
 
-	gamesService, err := domain.NewGamesService(gamesRepo, usersRepo, eventBus)
+	gamesService, err := games.NewService(gamesRepo, eventBus)
 	if err != nil {
 		log.Fatalf("unable to create games service: %v", err)
 	}
@@ -27,7 +28,12 @@ func main() {
 		log.Fatalf("unable to create users service: %v", err)
 	}
 
-	api, err := http.NewAPI(gamesService, usersService)
+	stateService, err := state.NewService(gamesRepo, usersRepo)
+	if err != nil {
+		log.Fatalf("unable to create game state service: %v", err)
+	}
+
+	api, err := http.NewAPI(gamesService, usersService, stateService)
 	if err != nil {
 		log.Fatalf("unable to create http API: %v", err)
 	}

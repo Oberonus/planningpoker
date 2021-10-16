@@ -6,19 +6,30 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestInternalBus_Subscribe(t *testing.T) {
+func TestInternalBus(t *testing.T) {
+	bus := eventbus.NewInternalBus()
+
+	calledCh := make(chan struct{})
+	eventType := "event1"
+
 	consumer := func(event events.DomainEvent) {
-		t.Logf("BLA!!!!!!!!!!!!!!!!!!!!!!!!")
+		assert.Equal(t, eventType, event.EventType())
+		calledCh <- struct{}{}
 	}
 
-	bus := eventbus.NewInternalBus()
 	bus.Subscribe(consumer, "event1", "event2")
 
-	err := bus.Publish(events.NewDomainEventBuilder("event1").Build())
+	err := bus.Publish(events.NewDomainEventBuilder(eventType).Build())
 	require.NoError(t, err)
 
-	time.Sleep(50 * time.Millisecond)
+	select {
+	case <-calledCh:
+		break
+	case <-time.After(100 * time.Millisecond):
+		t.Fatalf("consumer func was not called")
+	}
 }

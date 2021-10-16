@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"planningpoker/internal/domain"
+	"planningpoker/internal/domain/games"
 	"sync"
 	"time"
 )
@@ -14,7 +14,7 @@ type cardsDeckDTO struct {
 	Cards []string `json:"cards"`
 }
 
-func newCardsDeckDTO(d domain.CardsDeck) cardsDeckDTO {
+func newCardsDeckDTO(d games.CardsDeck) cardsDeckDTO {
 	dto := cardsDeckDTO{
 		Name:  d.Name(),
 		Cards: make([]string, len(d.Cards())),
@@ -27,17 +27,17 @@ func newCardsDeckDTO(d domain.CardsDeck) cardsDeckDTO {
 	return dto
 }
 
-func (d cardsDeckDTO) ToDomain() (*domain.CardsDeck, error) {
-	cards := make([]domain.Card, len(d.Cards))
+func (d cardsDeckDTO) ToDomain() (*games.CardsDeck, error) {
+	cards := make([]games.Card, len(d.Cards))
 	for i, v := range d.Cards {
-		c, err := domain.NewCard(v)
+		c, err := games.NewCard(v)
 		if err != nil {
 			return nil, fmt.Errorf("card creation: %w", err)
 		}
 		cards[i] = *c
 	}
 
-	return domain.NewCardsDeck(d.Name, cards)
+	return games.NewCardsDeck(d.Name, cards)
 }
 
 type playerDTO struct {
@@ -46,18 +46,18 @@ type playerDTO struct {
 	LastPing  time.Time `json:"last_ping"`
 }
 
-func (d playerDTO) ToDomain() (*domain.Player, error) {
-	var votedCard *domain.Card
+func (d playerDTO) ToDomain() (*games.Player, error) {
+	var votedCard *games.Card
 	var err error
 
 	if d.VotedCard != "" {
-		votedCard, err = domain.NewCard(d.VotedCard)
+		votedCard, err = games.NewCard(d.VotedCard)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	return &domain.Player{
+	return &games.Player{
 		VotedCard: votedCard,
 		CanReveal: d.CanReveal,
 		LastPing:  d.LastPing,
@@ -75,12 +75,12 @@ type gameDTO struct {
 	EveryoneCanReveal bool                 `json:"everyone_can_reveal"`
 }
 
-func (d gameDTO) ToDomain() (*domain.Game, error) {
-	game := &domain.Game{
+func (d gameDTO) ToDomain() (*games.Game, error) {
+	game := &games.Game{
 		ID:                d.ID,
 		Name:              d.Name,
 		TicketURL:         d.TicketURL,
-		Players:           make(map[string]*domain.Player),
+		Players:           make(map[string]*games.Player),
 		State:             d.State,
 		ChangeID:          d.ChangeID,
 		EveryoneCanReveal: d.EveryoneCanReveal,
@@ -116,7 +116,7 @@ func NewMemoryGameRepository() *MemoryGameRepository {
 
 // ModifyExclusively does exclusive blocking modification, so no other goroutines can modify the database exclusively
 // quick and dirty implementation, should evolve in something blocking on an external database level...
-func (r *MemoryGameRepository) ModifyExclusively(id string, cb func(*domain.Game) error) error {
+func (r *MemoryGameRepository) ModifyExclusively(id string, cb func(*games.Game) error) error {
 	r.gm.Lock()
 	defer r.gm.Unlock()
 
@@ -139,7 +139,7 @@ func (r *MemoryGameRepository) ModifyExclusively(id string, cb func(*domain.Game
 	return nil
 }
 
-func (r *MemoryGameRepository) Save(game *domain.Game) error {
+func (r *MemoryGameRepository) Save(game *games.Game) error {
 	dto := gameDTO{
 		ID:                game.ID,
 		Name:              game.Name,
@@ -175,7 +175,7 @@ func (r *MemoryGameRepository) Save(game *domain.Game) error {
 	return nil
 }
 
-func (r *MemoryGameRepository) Get(id string) (*domain.Game, error) {
+func (r *MemoryGameRepository) Get(id string) (*games.Game, error) {
 	r.m.RLock()
 	raw, ok := r.games[id]
 	r.m.RUnlock()
@@ -193,18 +193,18 @@ func (r *MemoryGameRepository) Get(id string) (*domain.Game, error) {
 	return dto.ToDomain()
 }
 
-func (r *MemoryGameRepository) GetActiveGamesByPlayerID(playerID string) ([]domain.Game, error) {
+func (r *MemoryGameRepository) GetActiveGamesByPlayerID(playerID string) ([]games.Game, error) {
 	r.m.RLock()
 	defer r.m.RUnlock()
 
-	list := make([]domain.Game, 0)
+	list := make([]games.Game, 0)
 	for _, j := range r.games {
 		dto := gameDTO{}
 		err := json.Unmarshal(j, &dto)
 		if err != nil {
 			return nil, err
 		}
-		if dto.State != domain.GameStateStarted {
+		if dto.State != games.GameStateStarted {
 			continue
 		}
 		if _, ok := dto.Players[playerID]; !ok {

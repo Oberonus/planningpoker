@@ -1,6 +1,4 @@
-package domain
-
-import "time"
+package games
 
 type CreateGameCommand struct {
 	UserID            string
@@ -71,22 +69,6 @@ func NewUnVoteCommand(gameID, userID string) (*UnVoteCommand, error) {
 	return &UnVoteCommand{
 		GameID: gameID,
 		UserID: userID,
-	}, nil
-}
-
-type GameStateCommand struct {
-	GameID       string
-	UserID       string
-	WaitFor      time.Duration
-	LastChangeID string
-}
-
-func NewGameStateCommand(gameID, userID string, waitFor time.Duration, lastChangeID string) (*GameStateCommand, error) {
-	return &GameStateCommand{
-		GameID:       gameID,
-		UserID:       userID,
-		WaitFor:      waitFor,
-		LastChangeID: lastChangeID,
 	}, nil
 }
 

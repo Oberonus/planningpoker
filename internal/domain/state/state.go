@@ -1,24 +1,27 @@
-package domain
+package state
 
-import "planningpoker/internal/domain/users"
+import (
+	"planningpoker/internal/domain/games"
+	"planningpoker/internal/domain/users"
+)
 
 type PlayerState struct {
 	Name      string
-	VotedCard *Card
+	VotedCard *games.Card
 }
 
 type GameState struct {
 	Name      string
 	TicketURL string
 	ChangeID  string
-	CardsDeck CardsDeck
+	CardsDeck games.CardsDeck
 	Players   []PlayerState
 	State     string
-	VotedCard *Card
+	VotedCard *games.Card
 	CanReveal bool
 }
 
-func NewStateForGame(userID string, game Game, gamers []users.User) GameState {
+func NewStateForGame(userID string, game games.Game, gamers []users.User) GameState {
 	state := GameState{
 		CardsDeck: game.CardsDeck,
 		Name:      game.Name,
@@ -38,8 +41,8 @@ func NewStateForGame(userID string, game Game, gamers []users.User) GameState {
 
 		votedCard := p.VotedCard
 		// mask real votes if game is running
-		if game.State == GameStateStarted && votedCard != nil {
-			unrevealedCard := NewUnrevealedCard()
+		if game.State == games.GameStateStarted && votedCard != nil {
+			unrevealedCard := games.NewUnrevealedCard()
 			votedCard = &unrevealedCard
 		}
 

@@ -2,7 +2,8 @@ package http
 
 import (
 	"errors"
-	"planningpoker/internal/domain"
+	"planningpoker/internal/domain/games"
+	"planningpoker/internal/domain/state"
 	"planningpoker/internal/domain/users"
 	"strings"
 	"time"
@@ -11,14 +12,17 @@ import (
 )
 
 type GamesService interface {
-	Create(cmd domain.CreateGameCommand) (string, error)
-	Update(cmd domain.UpdateGameCommand) error
-	Join(cmd domain.JoinGameCommand) error
-	Vote(cmd domain.VoteCommand) error
-	UnVote(cmd domain.UnVoteCommand) error
-	Reveal(cmd domain.RevealCardsCommand) error
-	Restart(cmd domain.RestartGameCommand) error
-	GameState(cmd domain.GameStateCommand) (*domain.GameState, error)
+	Create(cmd games.CreateGameCommand) (string, error)
+	Update(cmd games.UpdateGameCommand) error
+	Join(cmd games.JoinGameCommand) error
+	Vote(cmd games.VoteCommand) error
+	UnVote(cmd games.UnVoteCommand) error
+	Reveal(cmd games.RevealCardsCommand) error
+	Restart(cmd games.RestartGameCommand) error
+}
+
+type StateService interface {
+	GameState(cmd state.GameStateCommand) (*state.GameState, error)
 }
 
 type UsersService interface {
@@ -29,20 +33,25 @@ type UsersService interface {
 
 type API struct {
 	gamesService GamesService
-	usersService *users.Service
+	usersService UsersService
+	stateService StateService
 }
 
-func NewAPI(gs GamesService, us *users.Service) (*API, error) {
+func NewAPI(gs GamesService, us UsersService, ss StateService) (*API, error) {
 	if gs == nil {
 		return nil, errors.New("games service should be provided")
 	}
 	if us == nil {
 		return nil, errors.New("users service should be provided")
 	}
+	if ss == nil {
+		return nil, errors.New("state service should be provided")
+	}
 
 	return &API{
 		gamesService: gs,
 		usersService: us,
+		stateService: ss,
 	}, nil
 }
 
@@ -149,9 +158,9 @@ func (h *API) CreateGame(c *gin.Context) {
 		return
 	}
 
-	cards := make([]domain.Card, len(pl.CardsDeck.Types))
+	cards := make([]games.Card, len(pl.CardsDeck.Types))
 	for i, v := range pl.CardsDeck.Types {
-		card, err := domain.NewCard(v)
+		card, err := games.NewCard(v)
 		if err != nil {
 			badRequestError(c, err)
 			return
@@ -159,13 +168,13 @@ func (h *API) CreateGame(c *gin.Context) {
 		cards[i] = *card
 	}
 
-	deck, err := domain.NewCardsDeck(pl.CardsDeck.Name, cards)
+	deck, err := games.NewCardsDeck(pl.CardsDeck.Name, cards)
 	if err != nil {
 		badRequestError(c, err)
 		return
 	}
 
-	cmd, err := domain.NewCreateGameCommand(pl.Name, pl.TicketURL, user.ID(), *deck, pl.EveryoneCanReveal)
+	cmd, err := games.NewCreateGameCommand(pl.Name, pl.TicketURL, user.ID(), *deck, pl.EveryoneCanReveal)
 	if err != nil {
 		badRequestError(c, err)
 		return
@@ -195,7 +204,7 @@ func (h *API) UpdateGame(c *gin.Context) {
 		return
 	}
 
-	cmd, err := domain.NewUpdateGameCommand(gameID, pl.Name, pl.TicketURL, user.ID())
+	cmd, err := games.NewUpdateGameCommand(gameID, pl.Name, pl.TicketURL, user.ID())
 	if err != nil {
 		badRequestError(c, err)
 		return
@@ -217,7 +226,7 @@ func (h *API) Join(c *gin.Context) {
 	}
 	gameID := c.Param("gameID")
 
-	cmd, err := domain.NewJoinGameCommand(gameID, user.ID())
+	cmd, err := games.NewJoinGameCommand(gameID, user.ID())
 	if err != nil {
 		badRequestError(c, err)
 		return
@@ -240,13 +249,13 @@ func (h *API) Vote(c *gin.Context) {
 	gameID := c.Param("gameID")
 	vote := c.Param("vote")
 
-	card, err := domain.NewCard(vote)
+	card, err := games.NewCard(vote)
 	if err != nil {
 		badRequestError(c, err)
 		return
 	}
 
-	cmd, err := domain.NewVoteCommand(gameID, user.ID(), *card)
+	cmd, err := games.NewVoteCommand(gameID, user.ID(), *card)
 	if err != nil {
 		badRequestError(c, err)
 		return
@@ -268,7 +277,7 @@ func (h *API) UnVote(c *gin.Context) {
 	}
 	gameID := c.Param("gameID")
 
-	cmd, err := domain.NewUnVoteCommand(gameID, user.ID())
+	cmd, err := games.NewUnVoteCommand(gameID, user.ID())
 	if err != nil {
 		badRequestError(c, err)
 		return
@@ -288,7 +297,7 @@ type playerStateResponse struct {
 	VotedCard string `json:"voted_card"`
 }
 
-func newPlayerStateResponse(state domain.PlayerState) playerStateResponse {
+func newPlayerStateResponse(state state.PlayerState) playerStateResponse {
 	resp := playerStateResponse{
 		Name: state.Name,
 	}
@@ -303,7 +312,7 @@ type cardsDeckResponse struct {
 	Cards []string `json:"cards"`
 }
 
-func newCardsDeckResponse(cd domain.CardsDeck) cardsDeckResponse {
+func newCardsDeckResponse(cd games.CardsDeck) cardsDeckResponse {
 	resp := cardsDeckResponse{Name: cd.Name()}
 	for _, c := range cd.Cards() {
 		resp.Cards = append(resp.Cards, c.Type())
@@ -322,7 +331,7 @@ type gameStateResponse struct {
 	CanReveal bool                  `json:"can_reveal"`
 }
 
-func newGameStateResponse(state domain.GameState) gameStateResponse {
+func newGameStateResponse(state state.GameState) gameStateResponse {
 	resp := gameStateResponse{
 		Name:      state.Name,
 		TicketURL: state.TicketURL,
@@ -348,19 +357,19 @@ func (h *API) GameState(c *gin.Context) {
 	gameID := c.Param("gameID")
 	lastChangeID := c.Query("lastChangeID")
 
-	cmd, err := domain.NewGameStateCommand(gameID, user.ID(), 5*time.Second, lastChangeID)
+	cmd, err := state.NewGameStateCommand(gameID, user.ID(), 5*time.Second, lastChangeID)
 	if err != nil {
 		badRequestError(c, err)
 		return
 	}
 
-	state, err := h.gamesService.GameState(*cmd)
+	st, err := h.stateService.GameState(*cmd)
 	if err != nil {
 		internalError(c, err)
 		return
 	}
 
-	success(c, newGameStateResponse(*state))
+	success(c, newGameStateResponse(*st))
 }
 
 func (h *API) RestartGame(c *gin.Context) {
@@ -370,7 +379,7 @@ func (h *API) RestartGame(c *gin.Context) {
 	}
 	gameID := c.Param("gameID")
 
-	cmd, err := domain.NewRestartGameCommand(gameID, user.ID())
+	cmd, err := games.NewRestartGameCommand(gameID, user.ID())
 	if err != nil {
 		badRequestError(c, err)
 		return
@@ -392,7 +401,7 @@ func (h *API) RevealCards(c *gin.Context) {
 	}
 	gameID := c.Param("gameID")
 
-	cmd, err := domain.NewRevealCardsCommand(gameID, user.ID())
+	cmd, err := games.NewRevealCardsCommand(gameID, user.ID())
 	if err != nil {
 		badRequestError(c, err)
 		return

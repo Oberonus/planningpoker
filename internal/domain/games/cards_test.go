@@ -1,7 +1,7 @@
-package domain_test
+package games_test
 
 import (
-	"planningpoker/internal/domain"
+	"planningpoker/internal/domain/games"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,11 +9,11 @@ import (
 )
 
 func TestNewCard(t *testing.T) {
-	sucCard := domain.Card("xs")
+	sucCard := games.Card("xs")
 
 	testCases := map[string]struct {
 		typ     string
-		expCard *domain.Card
+		expCard *games.Card
 		expErr  string
 	}{
 		"success": {
@@ -34,7 +34,7 @@ func TestNewCard(t *testing.T) {
 		tt := tt
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			card, err := domain.NewCard(tt.typ)
+			card, err := games.NewCard(tt.typ)
 			if tt.expErr != "" {
 				assert.EqualError(t, err, tt.expErr)
 			} else {
@@ -46,26 +46,26 @@ func TestNewCard(t *testing.T) {
 }
 
 func TestNewUnrevealedCard(t *testing.T) {
-	card := domain.NewUnrevealedCard()
+	card := games.NewUnrevealedCard()
 	assert.Equal(t, "*", card.Type())
 }
 
 func TestNewCardsDeck(t *testing.T) {
-	card, err := domain.NewCard("xs")
+	card, err := games.NewCard("xs")
 	require.NoError(t, err)
 
 	testCases := map[string]struct {
 		name   string
-		cards  []domain.Card
+		cards  []games.Card
 		expErr string
 	}{
 		"success": {
 			name:  "name",
-			cards: []domain.Card{*card},
+			cards: []games.Card{*card},
 		},
 		"fail on empty name": {
 			name:   "",
-			cards:  []domain.Card{*card},
+			cards:  []games.Card{*card},
 			expErr: "name should be provided",
 		},
 		"fail on empty cards": {
@@ -79,7 +79,7 @@ func TestNewCardsDeck(t *testing.T) {
 		tt := tt
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			deck, err := domain.NewCardsDeck(tt.name, tt.cards)
+			deck, err := games.NewCardsDeck(tt.name, tt.cards)
 			if tt.expErr != "" {
 				assert.EqualError(t, err, tt.expErr)
 				assert.Nil(t, deck)
@@ -94,15 +94,15 @@ func TestNewCardsDeck(t *testing.T) {
 }
 
 func TestCardsDeck_IsInDeck(t *testing.T) {
-	card1, err := domain.NewCard("XS")
+	card1, err := games.NewCard("XS")
 	require.NoError(t, err)
-	card2, err := domain.NewCard("S")
+	card2, err := games.NewCard("S")
 	require.NoError(t, err)
-	deck, err := domain.NewCardsDeck("foo", []domain.Card{*card1, *card2})
+	deck, err := games.NewCardsDeck("foo", []games.Card{*card1, *card2})
 	require.NoError(t, err)
 
 	testCases := map[string]struct {
-		deck     domain.CardsDeck
+		deck     games.CardsDeck
 		card     string
 		expFound bool
 	}{
@@ -120,7 +120,7 @@ func TestCardsDeck_IsInDeck(t *testing.T) {
 		tt := tt
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			card, err := domain.NewCard(tt.card)
+			card, err := games.NewCard(tt.card)
 			require.NoError(t, err)
 			found := deck.IsInDeck(*card)
 			assert.Equal(t, tt.expFound, found)
