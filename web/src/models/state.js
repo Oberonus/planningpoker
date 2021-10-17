@@ -74,6 +74,7 @@ export default class {
     // long polling operation, will throttle in case of any exception
     async updatePeriodically() {
         try {
+            await game.ping(this.id)
             await this.update()
             setTimeout(async () => {
                 await this.updatePeriodically()

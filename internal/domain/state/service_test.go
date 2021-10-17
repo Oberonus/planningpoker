@@ -95,15 +95,15 @@ func TestGamesService_GameState(t *testing.T) {
 			cmd, err := state.NewGameStateCommand("anything", test.User1, time.Millisecond, "")
 			require.NoError(t, err)
 
-			state, err := srv.GameState(*cmd)
+			st, err := srv.GameState(*cmd)
 
 			if tt.expError != "" {
 				assert.EqualError(t, err, tt.expError)
-				assert.Nil(t, state)
+				assert.Nil(t, st)
 			} else {
 				assert.NoError(t, err)
-				require.NotNil(t, state)
-				assert.Len(t, state.Players, 1)
+				require.NotNil(t, st)
+				assert.Len(t, st.Players, 1)
 			}
 		})
 	}
@@ -112,10 +112,6 @@ func TestGamesService_GameState(t *testing.T) {
 type gamesRepoStub struct {
 	game   *games.Game
 	getErr error
-}
-
-func (g gamesRepoStub) ModifyExclusively(_ string, cb func(game *games.Game) error) error {
-	return cb(g.game)
 }
 
 func (g gamesRepoStub) Get(string) (*games.Game, error) {

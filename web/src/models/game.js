@@ -24,6 +24,11 @@ export default {
         return resp.data
     },
 
+    async ping(gameID) {
+        const resp = await axios.post(`games/${gameID}/ping`)
+        return resp.data
+    },
+
     async state(gameID, lastChangeID) {
         const resp = await axios.get(`games/${gameID}?lastChangeID=${lastChangeID}`)
         return resp.data

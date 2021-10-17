@@ -95,3 +95,15 @@ func NewRevealCardsCommand(gameID, userID string) (*RevealCardsCommand, error) {
 		UserID: userID,
 	}, nil
 }
+
+type PlayerPingCommand struct {
+	GameID string
+	UserID string
+}
+
+func NewPlayerPingCommand(gameID, userID string) (*PlayerPingCommand, error) {
+	return &PlayerPingCommand{
+		GameID: gameID,
+		UserID: userID,
+	}, nil
+}

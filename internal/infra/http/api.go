@@ -19,6 +19,7 @@ type GamesService interface {
 	UnVote(cmd games.UnVoteCommand) error
 	Reveal(cmd games.RevealCardsCommand) error
 	Restart(cmd games.RestartGameCommand) error
+	Ping(cmd games.PlayerPingCommand) error
 }
 
 type StateService interface {
@@ -62,6 +63,7 @@ func (h *API) SetupRoutes(r gin.IRoutes) {
 	r.POST("/api/v1/games", h.CreateGame)
 	r.PUT("/api/v1/games/:gameID", h.UpdateGame)
 	r.POST("/api/v1/games/:gameID/join", h.Join)
+	r.POST("/api/v1/games/:gameID/ping", h.Ping)
 	r.POST("/api/v1/games/:gameID/votes/:vote", h.Vote)
 	r.POST("/api/v1/games/:gameID/unvote", h.UnVote)
 	r.POST("/api/v1/games/:gameID/restart", h.RestartGame)
@@ -233,6 +235,28 @@ func (h *API) Join(c *gin.Context) {
 	}
 
 	err = h.gamesService.Join(*cmd)
+	if err != nil {
+		internalError(c, err)
+		return
+	}
+
+	success(c, nil)
+}
+
+func (h *API) Ping(c *gin.Context) {
+	user := h.authenticate(c)
+	if user == nil {
+		return
+	}
+	gameID := c.Param("gameID")
+
+	cmd, err := games.NewPlayerPingCommand(gameID, user.ID())
+	if err != nil {
+		badRequestError(c, err)
+		return
+	}
+
+	err = h.gamesService.Ping(*cmd)
 	if err != nil {
 		internalError(c, err)
 		return

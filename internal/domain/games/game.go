@@ -58,7 +58,7 @@ func (g *Game) Update(cmd UpdateGameCommand) error {
 }
 
 func (g *Game) Join(cmd JoinGameCommand) error {
-	if g.isPlayer(cmd.UserID) {
+	if g.IsPlayer(cmd.UserID) {
 		return nil
 	}
 
@@ -92,7 +92,7 @@ func (g *Game) Restart(cmd RestartGameCommand) error {
 }
 
 func (g *Game) Vote(cmd VoteCommand) error {
-	if !g.isPlayer(cmd.UserID) {
+	if !g.IsPlayer(cmd.UserID) {
 		return errors.New("user is not a player")
 	}
 
@@ -129,7 +129,7 @@ func (g *Game) Reveal(cmd RevealCardsCommand) error {
 }
 
 func (g *Game) UnVote(cmd UnVoteCommand) error {
-	if !g.isPlayer(cmd.UserID) {
+	if !g.IsPlayer(cmd.UserID) {
 		return errors.New("user is not a player")
 	}
 
@@ -148,7 +148,7 @@ func (g *Game) ForceChanged() {
 	g.setChanged()
 }
 
-func (g *Game) isPlayer(uid string) bool {
+func (g *Game) IsPlayer(uid string) bool {
 	_, ok := g.Players[uid]
 	return ok
 }

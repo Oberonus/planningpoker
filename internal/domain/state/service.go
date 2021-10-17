@@ -30,18 +30,13 @@ func (s *Service) GameState(cmd GameStateCommand) (*GameState, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), cmd.WaitFor)
 	defer cancel()
 
-	var game *games.Game
-	err := s.gamesRepo.ModifyExclusively(cmd.GameID, func(g *games.Game) error {
-		game = g
-		return g.Ping(cmd.UserID)
-	})
+	game, err := s.getUpdatedState(ctx, cmd.GameID, cmd.LastChangeID)
 	if err != nil {
 		return nil, err
 	}
 
-	game, err = s.getUpdatedState(ctx, cmd.GameID, cmd.LastChangeID)
-	if err != nil {
-		return nil, err
+	if !game.IsPlayer(cmd.UserID) {
+		return nil, errors.New("user is not a player")
 	}
 
 	userIDs := make([]string, 0)

@@ -80,6 +80,12 @@ func (s *Service) Reveal(cmd RevealCardsCommand) error {
 	})
 }
 
+func (s *Service) Ping(cmd PlayerPingCommand) error {
+	return s.gamesRepo.ModifyExclusively(cmd.GameID, func(g *Game) error {
+		return g.Ping(cmd.UserID)
+	})
+}
+
 func (s *Service) ProcessUserUpdated(e events.DomainEvent) {
 	list, err := s.gamesRepo.GetActiveGamesByPlayerID(e.AggregateID())
 	if err != nil {

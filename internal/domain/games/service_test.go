@@ -207,6 +207,44 @@ func TestGamesService_Vote(t *testing.T) {
 	}
 }
 
+func TestGamesService_Ping(t *testing.T) {
+	t.Parallel()
+
+	testCases := map[string]struct {
+		gameRepo games.GameRepository
+		expError string
+	}{
+		"success": {
+			gameRepo: gamesRepoStub{game: newTestServiceGame(t).UserJoins(test.User1).Instance()},
+			expError: "",
+		},
+		"fail on error": {
+			gameRepo: gamesRepoStub{game: newTestServiceGame(t).Instance()},
+			expError: "user is not a player",
+		},
+	}
+
+	for name, tt := range testCases {
+		tt := tt
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			srv, err := games.NewService(tt.gameRepo, eventBusStub{})
+			require.NoError(t, err)
+
+			cmd, err := games.NewPlayerPingCommand("anything", test.User1)
+			require.NoError(t, err)
+
+			err = srv.Ping(*cmd)
+
+			if tt.expError != "" {
+				assert.EqualError(t, err, tt.expError)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
 func TestGamesService_UnVote(t *testing.T) {
 	t.Parallel()
 

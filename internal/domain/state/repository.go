@@ -6,7 +6,6 @@ import (
 )
 
 type GameRepository interface {
-	ModifyExclusively(id string, cb func(game *games.Game) error) error
 	Get(id string) (*games.Game, error)
 }
 
