@@ -223,7 +223,7 @@ type usersRepoStub struct {
 
 func (u usersRepoStub) Get(id string) (*users.User, error) {
 	if u.getUser != nil && u.getUser.ID() != id {
-		return nil, errors.New("test failed - user ID does not match")
+		return nil, errors.New("test failed - user id does not match")
 	}
 	return u.getUser, u.getErr
 }
@@ -243,5 +243,4 @@ func (e eventBusStub) Publish(events.DomainEvent) error {
 }
 
 func (e eventBusStub) Subscribe(events.Consumer, ...string) {
-	return
 }

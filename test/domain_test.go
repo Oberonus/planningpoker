@@ -64,6 +64,11 @@ func TestWorkflow(t *testing.T) {
 	err = gamesService.Vote(*voteCmd)
 	require.NoError(t, err)
 
+	pingCmd, err := games.NewPlayerPingCommand(gameID, user2.ID())
+	require.NoError(t, err)
+	err = gamesService.Ping(*pingCmd)
+	require.NoError(t, err)
+
 	stateCmd, err := state.NewGameStateCommand(gameID, user1.ID(), time.Second, "")
 	require.NoError(t, err)
 	st, err := stateService.GameState(*stateCmd)

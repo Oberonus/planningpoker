@@ -76,28 +76,20 @@ type gameDTO struct {
 }
 
 func (d gameDTO) ToDomain() (*games.Game, error) {
-	game := &games.Game{
-		ID:                d.ID,
-		Name:              d.Name,
-		TicketURL:         d.TicketURL,
-		Players:           make(map[string]*games.Player),
-		State:             d.State,
-		ChangeID:          d.ChangeID,
-		EveryoneCanReveal: d.EveryoneCanReveal,
-	}
-
 	deck, err := d.CardsDeck.ToDomain()
 	if err != nil {
 		return nil, err
 	}
-	game.CardsDeck = *deck
 
+	players := make(map[string]*games.Player)
 	for i, p := range d.Players {
-		game.Players[i], err = p.ToDomain()
+		players[i], err = p.ToDomain()
 		if err != nil {
 			return nil, err
 		}
 	}
+
+	game := games.NewRaw(d.ID, d.Name, d.TicketURL, *deck, players, d.State, d.ChangeID, d.EveryoneCanReveal)
 
 	return game, err
 }
@@ -141,17 +133,17 @@ func (r *MemoryGameRepository) ModifyExclusively(id string, cb func(*games.Game)
 
 func (r *MemoryGameRepository) Save(game *games.Game) error {
 	dto := gameDTO{
-		ID:                game.ID,
-		Name:              game.Name,
-		TicketURL:         game.TicketURL,
-		CardsDeck:         newCardsDeckDTO(game.CardsDeck),
+		ID:                game.ID(),
+		Name:              game.Name(),
+		TicketURL:         game.TicketURL(),
+		CardsDeck:         newCardsDeckDTO(game.CardsDeck()),
 		Players:           make(map[string]playerDTO),
-		State:             game.State,
-		ChangeID:          game.ChangeID,
-		EveryoneCanReveal: game.EveryoneCanReveal,
+		State:             game.State(),
+		ChangeID:          game.ChangeID(),
+		EveryoneCanReveal: game.EveryoneCanReveal(),
 	}
 
-	for id, p := range game.Players {
+	for id, p := range game.Players() {
 		votedCard := ""
 		if p.VotedCard != nil {
 			votedCard = p.VotedCard.Type()
@@ -170,7 +162,7 @@ func (r *MemoryGameRepository) Save(game *games.Game) error {
 
 	r.m.Lock()
 	defer r.m.Unlock()
-	r.games[game.ID] = raw
+	r.games[game.ID()] = raw
 
 	return nil
 }

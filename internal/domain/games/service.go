@@ -29,7 +29,7 @@ func NewService(gr GameRepository, eb events.EventBus) (*Service, error) {
 func (s *Service) Create(cmd CreateGameCommand) (string, error) {
 	game := NewGame(cmd)
 
-	joinCmd, err := NewJoinGameCommand(game.ID, cmd.UserID)
+	joinCmd, err := NewJoinGameCommand(game.id, cmd.UserID)
 	if err != nil {
 		return "", err
 	}
@@ -41,7 +41,7 @@ func (s *Service) Create(cmd CreateGameCommand) (string, error) {
 		return "", err
 	}
 
-	return game.ID, nil
+	return game.id, nil
 }
 
 func (s *Service) Update(cmd UpdateGameCommand) error {
@@ -93,7 +93,7 @@ func (s *Service) ProcessUserUpdated(e events.DomainEvent) {
 	}
 
 	for _, g := range list {
-		err := s.gamesRepo.ModifyExclusively(g.ID, func(g *Game) error {
+		err := s.gamesRepo.ModifyExclusively(g.id, func(g *Game) error {
 			g.ForceChanged()
 			return nil
 		})

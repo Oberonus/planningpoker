@@ -40,7 +40,7 @@ func (s *Service) GameState(cmd GameStateCommand) (*GameState, error) {
 	}
 
 	userIDs := make([]string, 0)
-	for id := range game.Players {
+	for id := range game.Players() {
 		userIDs = append(userIDs, id)
 	}
 
@@ -61,7 +61,7 @@ func (s *Service) getUpdatedState(ctx context.Context, gameID, lastKnownStateID 
 			return nil, err
 		}
 
-		if game.ChangeID != lastKnownStateID {
+		if game.ChangeID() != lastKnownStateID {
 			return game, nil
 		}
 

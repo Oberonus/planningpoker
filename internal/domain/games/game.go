@@ -22,36 +22,81 @@ const (
 )
 
 type Game struct {
-	ID                string
-	Name              string
-	TicketURL         string
-	CardsDeck         CardsDeck
-	Players           map[string]*Player
-	State             string
-	ChangeID          string
-	EveryoneCanReveal bool
+	id                string
+	name              string
+	ticketURL         string
+	cardsDeck         CardsDeck
+	players           map[string]*Player
+	state             string
+	changeID          string
+	everyoneCanReveal bool
 }
 
 func NewGame(cmd CreateGameCommand) *Game {
 	return &Game{
-		ID:                strings.Replace(uuid.New().String(), "-", "", -1),
-		Name:              cmd.Name,
-		TicketURL:         cmd.TicketURL,
-		CardsDeck:         cmd.CardsDeck,
-		Players:           make(map[string]*Player),
-		State:             GameStateStarted,
-		EveryoneCanReveal: cmd.EveryoneCanReveal,
+		id:                strings.ReplaceAll(uuid.New().String(), "-", ""),
+		name:              cmd.Name,
+		ticketURL:         cmd.TicketURL,
+		cardsDeck:         cmd.CardsDeck,
+		players:           make(map[string]*Player),
+		state:             GameStateStarted,
+		everyoneCanReveal: cmd.EveryoneCanReveal,
 	}
 }
 
+func NewRaw(id, name, ticketURL string, deck CardsDeck, players map[string]*Player, state, cid string, ecr bool) *Game {
+	return &Game{
+		id:                id,
+		name:              name,
+		ticketURL:         ticketURL,
+		cardsDeck:         deck,
+		players:           players,
+		state:             state,
+		changeID:          cid,
+		everyoneCanReveal: ecr,
+	}
+}
+
+func (g Game) ID() string {
+	return g.id
+}
+
+func (g Game) Name() string {
+	return g.name
+}
+
+func (g Game) TicketURL() string {
+	return g.ticketURL
+}
+
+func (g Game) CardsDeck() CardsDeck {
+	return g.cardsDeck
+}
+
+func (g Game) Players() map[string]*Player {
+	return g.players
+}
+
+func (g Game) State() string {
+	return g.state
+}
+
+func (g Game) EveryoneCanReveal() bool {
+	return g.everyoneCanReveal
+}
+
+func (g Game) ChangeID() string {
+	return g.changeID
+}
+
 func (g *Game) Update(cmd UpdateGameCommand) error {
-	_, ok := g.Players[cmd.UserID]
+	_, ok := g.players[cmd.UserID]
 	if !ok {
 		return errors.New("user is not a player")
 	}
 
-	g.Name = cmd.Name
-	g.TicketURL = cmd.TicketURL
+	g.name = cmd.Name
+	g.ticketURL = cmd.TicketURL
 	g.setChanged()
 
 	return nil
@@ -62,9 +107,9 @@ func (g *Game) Join(cmd JoinGameCommand) error {
 		return nil
 	}
 
-	canReveal := g.EveryoneCanReveal || len(g.Players) == 0
+	canReveal := g.everyoneCanReveal || len(g.players) == 0
 
-	g.Players[cmd.UserID] = &Player{
+	g.players[cmd.UserID] = &Player{
 		VotedCard: nil,
 		CanReveal: canReveal,
 		LastPing:  time.Now(),
@@ -76,13 +121,13 @@ func (g *Game) Join(cmd JoinGameCommand) error {
 }
 
 func (g *Game) Restart(cmd RestartGameCommand) error {
-	_, ok := g.Players[cmd.UserID]
+	_, ok := g.players[cmd.UserID]
 	if !ok {
 		return errors.New("user is not a player")
 	}
-	g.State = GameStateStarted
+	g.state = GameStateStarted
 
-	for _, p := range g.Players {
+	for _, p := range g.players {
 		p.VotedCard = nil
 	}
 
@@ -96,15 +141,15 @@ func (g *Game) Vote(cmd VoteCommand) error {
 		return errors.New("user is not a player")
 	}
 
-	if g.State != GameStateStarted {
+	if g.state != GameStateStarted {
 		return errors.New("can not vote on ended game")
 	}
 
-	if !g.CardsDeck.IsInDeck(cmd.Vote) {
+	if !g.cardsDeck.IsInDeck(cmd.Vote) {
 		return errors.New("unknown card")
 	}
 
-	g.Players[cmd.UserID].VotedCard = &cmd.Vote
+	g.players[cmd.UserID].VotedCard = &cmd.Vote
 
 	g.setChanged()
 
@@ -112,7 +157,7 @@ func (g *Game) Vote(cmd VoteCommand) error {
 }
 
 func (g *Game) Reveal(cmd RevealCardsCommand) error {
-	p, ok := g.Players[cmd.UserID]
+	p, ok := g.players[cmd.UserID]
 	if !ok {
 		return errors.New("user is not a player")
 	}
@@ -121,7 +166,7 @@ func (g *Game) Reveal(cmd RevealCardsCommand) error {
 		return errors.New("user can not reveal cards")
 	}
 
-	g.State = GameStateFinished
+	g.state = GameStateFinished
 
 	g.setChanged()
 
@@ -133,11 +178,11 @@ func (g *Game) UnVote(cmd UnVoteCommand) error {
 		return errors.New("user is not a player")
 	}
 
-	if g.State != GameStateStarted {
+	if g.state != GameStateStarted {
 		return errors.New("can not un-vote on ended game")
 	}
 
-	g.Players[cmd.UserID].VotedCard = nil
+	g.players[cmd.UserID].VotedCard = nil
 
 	g.setChanged()
 
@@ -149,13 +194,13 @@ func (g *Game) ForceChanged() {
 }
 
 func (g *Game) IsPlayer(uid string) bool {
-	_, ok := g.Players[uid]
+	_, ok := g.players[uid]
 	return ok
 }
 
 // Ping additionally does a players cleanup. Who does not ping for several seconds, will be removed.
 func (g *Game) Ping(uid string) error {
-	p, ok := g.Players[uid]
+	p, ok := g.players[uid]
 	if !ok {
 		return errors.New("user is not a player")
 	}
@@ -164,7 +209,7 @@ func (g *Game) Ping(uid string) error {
 	// cleanup stale players who did not vote
 	newPlayers := make(map[string]*Player)
 	hasRevealer := false
-	for id, p := range g.Players {
+	for id, p := range g.players {
 		if p.LastPing.Add(StalePlayerTTL).After(time.Now()) || p.VotedCard != nil {
 			newPlayers[id] = p
 			if p.CanReveal {
@@ -181,15 +226,15 @@ func (g *Game) Ping(uid string) error {
 		}
 	}
 
-	if len(g.Players) != len(newPlayers) {
+	if len(g.players) != len(newPlayers) {
 		g.setChanged()
 	}
 
-	g.Players = newPlayers
+	g.players = newPlayers
 
 	return nil
 }
 
 func (g *Game) setChanged() {
-	g.ChangeID = uuid.NewString()
+	g.changeID = uuid.NewString()
 }

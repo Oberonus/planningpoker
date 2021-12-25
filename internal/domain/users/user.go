@@ -14,7 +14,7 @@ type User struct {
 
 func NewUser(name string) (*User, error) {
 	u := &User{
-		id: strings.Replace(uuid.New().String(), "-", "", -1),
+		id: strings.ReplaceAll(uuid.New().String(), "-", ""),
 	}
 	if err := u.NameAs(name); err != nil {
 		return nil, err

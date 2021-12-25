@@ -390,5 +390,4 @@ func (e eventBusStub) Publish(events.DomainEvent) error {
 }
 
 func (e eventBusStub) Subscribe(events.Consumer, ...string) {
-	return
 }
