@@ -17,7 +17,7 @@ type gamePayload struct {
 	EveryoneCanReveal bool `json:"everyone_can_reveal"`
 }
 
-func (h *API) CreateGame(c *gin.Context, user *users.User) {
+func (h *API) createGame(c *gin.Context, user *users.User) {
 	pl := gamePayload{}
 	if err := c.BindJSON(&pl); err != nil {
 		badRequestError(c, err)
@@ -57,7 +57,7 @@ func (h *API) CreateGame(c *gin.Context, user *users.User) {
 	})
 }
 
-func (h *API) UpdateGame(c *gin.Context, user *users.User) {
+func (h *API) updateGame(c *gin.Context, user *users.User) {
 	gameID := c.Param("gameID")
 
 	pl := gamePayload{}
@@ -81,7 +81,7 @@ func (h *API) UpdateGame(c *gin.Context, user *users.User) {
 	c.JSON(200, gin.H{})
 }
 
-func (h *API) Join(c *gin.Context, user *users.User) {
+func (h *API) join(c *gin.Context, user *users.User) {
 	gameID := c.Param("gameID")
 
 	cmd, err := games.NewJoinGameCommand(gameID, user.ID())
@@ -99,7 +99,7 @@ func (h *API) Join(c *gin.Context, user *users.User) {
 	success(c, nil)
 }
 
-func (h *API) Ping(c *gin.Context, user *users.User) {
+func (h *API) ping(c *gin.Context, user *users.User) {
 	gameID := c.Param("gameID")
 
 	cmd, err := games.NewPlayerPingCommand(gameID, user.ID())
@@ -117,7 +117,7 @@ func (h *API) Ping(c *gin.Context, user *users.User) {
 	success(c, nil)
 }
 
-func (h *API) Vote(c *gin.Context, user *users.User) {
+func (h *API) vote(c *gin.Context, user *users.User) {
 	gameID := c.Param("gameID")
 	vote := c.Param("vote")
 
@@ -142,7 +142,7 @@ func (h *API) Vote(c *gin.Context, user *users.User) {
 	success(c, nil)
 }
 
-func (h *API) UnVote(c *gin.Context, user *users.User) {
+func (h *API) unVote(c *gin.Context, user *users.User) {
 	gameID := c.Param("gameID")
 
 	cmd, err := games.NewUnVoteCommand(gameID, user.ID())
@@ -160,7 +160,7 @@ func (h *API) UnVote(c *gin.Context, user *users.User) {
 	success(c, nil)
 }
 
-func (h *API) RevealCards(c *gin.Context, user *users.User) {
+func (h *API) revealCards(c *gin.Context, user *users.User) {
 	gameID := c.Param("gameID")
 
 	cmd, err := games.NewRevealCardsCommand(gameID, user.ID())
@@ -178,7 +178,7 @@ func (h *API) RevealCards(c *gin.Context, user *users.User) {
 	success(c, nil)
 }
 
-func (h *API) RestartGame(c *gin.Context, user *users.User) {
+func (h *API) restartGame(c *gin.Context, user *users.User) {
 	gameID := c.Param("gameID")
 
 	cmd, err := games.NewRestartGameCommand(gameID, user.ID())

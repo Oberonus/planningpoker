@@ -3,13 +3,16 @@ package games
 import (
 	"errors"
 	"fmt"
+
 	"planningpoker/internal/domain/events"
 )
 
+// Service is the game related application service.
 type Service struct {
 	gamesRepo GameRepository
 }
 
+// NewService creates a new game domain service instance.
 func NewService(gr GameRepository, eb events.EventBus) (*Service, error) {
 	if gr == nil {
 		return nil, errors.New("games repository should be provided")
@@ -21,11 +24,12 @@ func NewService(gr GameRepository, eb events.EventBus) (*Service, error) {
 	gs := &Service{
 		gamesRepo: gr,
 	}
-	eb.Subscribe(gs.ProcessUserUpdated, events.EventTypeUserUpdated)
+	eb.Subscribe(gs.processUserUpdated, events.EventTypeUserUpdated)
 
 	return gs, nil
 }
 
+// Create creates a game.
 func (s *Service) Create(cmd CreateGameCommand) (string, error) {
 	game := NewGame(cmd)
 
@@ -44,49 +48,56 @@ func (s *Service) Create(cmd CreateGameCommand) (string, error) {
 	return game.id, nil
 }
 
+// Update updates a game.
 func (s *Service) Update(cmd UpdateGameCommand) error {
 	return s.gamesRepo.ModifyExclusively(cmd.GameID, func(game *Game) error {
 		return game.Update(cmd)
 	})
 }
 
+// Join adds a player to the game.
 func (s *Service) Join(cmd JoinGameCommand) error {
 	return s.gamesRepo.ModifyExclusively(cmd.GameID, func(game *Game) error {
 		return game.Join(cmd)
 	})
 }
 
+// Restart restarts the game.
 func (s *Service) Restart(cmd RestartGameCommand) error {
 	return s.gamesRepo.ModifyExclusively(cmd.GameID, func(game *Game) error {
 		return game.Restart(cmd)
 	})
 }
 
+// Vote performs player voting.
 func (s *Service) Vote(cmd VoteCommand) error {
 	return s.gamesRepo.ModifyExclusively(cmd.GameID, func(game *Game) error {
 		return game.Vote(cmd)
 	})
 }
 
+// UnVote removes a player vote.
 func (s *Service) UnVote(cmd UnVoteCommand) error {
 	return s.gamesRepo.ModifyExclusively(cmd.GameID, func(game *Game) error {
 		return game.UnVote(cmd)
 	})
 }
 
+// Reveal opens all cards and stops the game.
 func (s *Service) Reveal(cmd RevealCardsCommand) error {
 	return s.gamesRepo.ModifyExclusively(cmd.GameID, func(game *Game) error {
 		return game.Reveal(cmd)
 	})
 }
 
+// Ping updates player state (assure that the player is still active).
 func (s *Service) Ping(cmd PlayerPingCommand) error {
 	return s.gamesRepo.ModifyExclusively(cmd.GameID, func(g *Game) error {
 		return g.Ping(cmd.UserID)
 	})
 }
 
-func (s *Service) ProcessUserUpdated(e events.DomainEvent) {
+func (s *Service) processUserUpdated(e events.DomainEvent) {
 	list, err := s.gamesRepo.GetActiveGamesByPlayerID(e.AggregateID())
 	if err != nil {
 		fmt.Printf("error fetching games for player id=%s: %v", e.AggregateID(), err)
@@ -98,7 +109,7 @@ func (s *Service) ProcessUserUpdated(e events.DomainEvent) {
 			return nil
 		})
 		if err != nil {
-			fmt.Printf("no way to update game, will be updated eventually")
+			fmt.Printf("no way to update the game, will be updated eventually")
 		}
 	}
 }

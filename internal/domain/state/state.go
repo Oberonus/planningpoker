@@ -1,3 +1,4 @@
+// Package state contains domain level game state logic.
 package state
 
 import (
@@ -5,11 +6,13 @@ import (
 	"planningpoker/internal/domain/users"
 )
 
+// PlayerState represents a player state.
 type PlayerState struct {
 	Name      string
 	VotedCard *games.Card
 }
 
+// GameState represents a game state.
 type GameState struct {
 	Name      string
 	TicketURL string
@@ -21,6 +24,7 @@ type GameState struct {
 	CanReveal bool
 }
 
+// NewStateForGame creates a new game state.
 func NewStateForGame(userID string, game games.Game, gamers []users.User) GameState {
 	state := GameState{
 		CardsDeck: game.CardsDeck(),

@@ -7,11 +7,13 @@ import (
 	"time"
 )
 
+// Service is a game state service.
 type Service struct {
 	gamesRepo GameRepository
 	usersRepo UsersRepository
 }
 
+// NewService creates a new game state service instance.
 func NewService(gr GameRepository, ur UsersRepository) (*Service, error) {
 	if gr == nil {
 		return nil, errors.New("games repository should be provided")
@@ -26,6 +28,7 @@ func NewService(gr GameRepository, ur UsersRepository) (*Service, error) {
 	}, nil
 }
 
+// GameState returns a current state of a game.
 func (s *Service) GameState(cmd GameStateCommand) (*GameState, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), cmd.WaitFor)
 	defer cancel()

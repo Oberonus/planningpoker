@@ -1,3 +1,4 @@
+// Package eventbus contains internal domain events bus implementation.
 package eventbus
 
 import (
@@ -5,17 +6,20 @@ import (
 	"sync"
 )
 
+// InternalBus represents a simple in-service pub/sub service for domain events.
 type InternalBus struct {
 	m           sync.RWMutex
 	subscribers map[string][]events.Consumer
 }
 
+// NewInternalBus creates a new internal bus instance.
 func NewInternalBus() *InternalBus {
 	return &InternalBus{
 		subscribers: make(map[string][]events.Consumer),
 	}
 }
 
+// Publish publishes the provided event.
 func (b *InternalBus) Publish(event events.DomainEvent) error {
 	b.m.RLock()
 	defer b.m.RUnlock()
@@ -27,6 +31,7 @@ func (b *InternalBus) Publish(event events.DomainEvent) error {
 	return nil
 }
 
+// Subscribe is a way for services to subscribe to some events.
 func (b *InternalBus) Subscribe(consumer events.Consumer, eventTypes ...string) {
 	b.m.Lock()
 	defer b.m.Unlock()

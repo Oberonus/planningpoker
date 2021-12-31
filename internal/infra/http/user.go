@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (h *API) Register(c *gin.Context) {
+func (h *API) register(c *gin.Context) {
 	pl := struct {
 		Name string `json:"name"`
 		ID   string `json:"id"`
@@ -33,13 +33,13 @@ func (h *API) Register(c *gin.Context) {
 	})
 }
 
-func (h *API) CurrentUser(c *gin.Context, user *users.User) {
+func (h *API) currentUser(c *gin.Context, user *users.User) {
 	success(c, gin.H{
 		"name": user.Name(),
 	})
 }
 
-func (h *API) ChangeUserData(c *gin.Context, user *users.User) {
+func (h *API) changeUserData(c *gin.Context, user *users.User) {
 	pl := struct {
 		Name string `json:"name"`
 	}{}

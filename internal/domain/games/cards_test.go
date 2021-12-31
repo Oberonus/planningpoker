@@ -9,6 +9,7 @@ import (
 )
 
 func TestNewCard(t *testing.T) {
+	t.Parallel()
 	sucCard := games.Card("xs")
 
 	testCases := map[string]struct {
@@ -46,11 +47,13 @@ func TestNewCard(t *testing.T) {
 }
 
 func TestNewUnrevealedCard(t *testing.T) {
+	t.Parallel()
 	card := games.NewUnrevealedCard()
 	assert.Equal(t, "*", card.Type())
 }
 
 func TestNewCardsDeck(t *testing.T) {
+	t.Parallel()
 	card, err := games.NewCard("xs")
 	require.NoError(t, err)
 
@@ -94,6 +97,7 @@ func TestNewCardsDeck(t *testing.T) {
 }
 
 func TestCardsDeck_IsInDeck(t *testing.T) {
+	t.Parallel()
 	card1, err := games.NewCard("XS")
 	require.NoError(t, err)
 	card2, err := games.NewCard("S")

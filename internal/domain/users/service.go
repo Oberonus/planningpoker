@@ -6,11 +6,13 @@ import (
 	"planningpoker/internal/domain/events"
 )
 
+// Service is a user related application service.
 type Service struct {
 	usersRepo Repository
 	eventBus  events.EventBus
 }
 
+// NewService creates a new users service instance.
 func NewService(ur Repository, eb events.EventBus) (*Service, error) {
 	if ur == nil {
 		return nil, errors.New("users repository should be provided")
@@ -25,7 +27,7 @@ func NewService(ur Repository, eb events.EventBus) (*Service, error) {
 	}, nil
 }
 
-// Register is a first time registration, without userID known
+// Register is a first time registration, without userID known.
 func (s *Service) Register(cmd RegisterCommand) (*User, error) {
 	u, err := NewUser(cmd.Name)
 	if err != nil {
@@ -39,6 +41,7 @@ func (s *Service) Register(cmd RegisterCommand) (*User, error) {
 	return u, nil
 }
 
+// Update updates some user details.
 func (s *Service) Update(cmd UpdateCommand) (*User, error) {
 	u, err := s.usersRepo.Get(cmd.ID)
 	if err != nil {
@@ -65,6 +68,7 @@ func (s *Service) Update(cmd UpdateCommand) (*User, error) {
 	return u, nil
 }
 
+// AuthenticateByID checks that the user with provided ID exists.
 func (s *Service) AuthenticateByID(cmd AuthByIDCommand) (*User, error) {
 	u, err := s.usersRepo.Get(cmd.ID)
 	if err != nil {

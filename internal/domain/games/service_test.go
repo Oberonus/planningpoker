@@ -126,7 +126,6 @@ func TestGamesService_Update(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestGamesService_Restart(t *testing.T) {

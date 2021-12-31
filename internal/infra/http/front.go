@@ -5,13 +5,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type Frontend struct {
-}
+// Frontend represents HTTP API for frontend related assets.
+type Frontend struct{}
 
+// NewFrontend creates a new frontend provider instance.
 func NewFrontend() *Frontend {
 	return &Frontend{}
 }
 
+// SetupRoutes creates a frontend API instance in order to serve frontend related files.
 func (f *Frontend) SetupRoutes(r *gin.Engine) {
 	r.Use(static.Serve("/", static.LocalFile("./web/dist", true)))
 
