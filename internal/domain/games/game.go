@@ -1,3 +1,4 @@
+// Package games contains domain level game logic.
 package games
 
 import (
@@ -8,19 +9,17 @@ import (
 	"github.com/google/uuid"
 )
 
-type Player struct {
-	VotedCard *Card
-	CanReveal bool
-	LastPing  time.Time
-}
-
 const (
-	GameStateStarted  = "started"
+	// GameStateStarted represents running game state.
+	GameStateStarted = "started"
+	// GameStateFinished represents finished game state.
 	GameStateFinished = "finished"
 
+	// StalePlayerTTL is a timeout when a player will be automatically removed from a game in case of no Pings.
 	StalePlayerTTL = 10 * time.Second
 )
 
+// Game is a domain aggregate that represents one single game.
 type Game struct {
 	id                string
 	name              string
@@ -32,6 +31,14 @@ type Game struct {
 	everyoneCanReveal bool
 }
 
+// Player is an entity of a game player with state.
+type Player struct {
+	VotedCard *Card
+	CanReveal bool
+	LastPing  time.Time
+}
+
+// NewGame creates a new game aggregate instance.
 func NewGame(cmd CreateGameCommand) *Game {
 	return &Game{
 		id:                strings.ReplaceAll(uuid.New().String(), "-", ""),
@@ -44,6 +51,8 @@ func NewGame(cmd CreateGameCommand) *Game {
 	}
 }
 
+// NewRaw instantiates a game aggregate from raw data.
+// It should never be used in any logic except aggregate hydration from any serialized format (db, etc...)
 func NewRaw(id, name, ticketURL string, deck CardsDeck, players map[string]*Player, state, cid string, ecr bool) *Game {
 	return &Game{
 		id:                id,
@@ -57,38 +66,47 @@ func NewRaw(id, name, ticketURL string, deck CardsDeck, players map[string]*Play
 	}
 }
 
+// ID returns a game id.
 func (g Game) ID() string {
 	return g.id
 }
 
+// Name returns a game name.
 func (g Game) Name() string {
 	return g.name
 }
 
+// TicketURL returns a ticket URL (e.g. link to JIRA) related to the game.
 func (g Game) TicketURL() string {
 	return g.ticketURL
 }
 
+// CardsDeck returns a deck of cards used in game.
 func (g Game) CardsDeck() CardsDeck {
 	return g.cardsDeck
 }
 
+// Players returns all game players.
 func (g Game) Players() map[string]*Player {
 	return g.players
 }
 
+// State returns a game current state.
 func (g Game) State() string {
 	return g.state
 }
 
+// EveryoneCanReveal returns true if any player can reveal cards.
 func (g Game) EveryoneCanReveal() bool {
 	return g.everyoneCanReveal
 }
 
+// ChangeID returns internal change ID which shows that the aggregate was changed.
 func (g Game) ChangeID() string {
 	return g.changeID
 }
 
+// Update updates game generic data.
 func (g *Game) Update(cmd UpdateGameCommand) error {
 	_, ok := g.players[cmd.UserID]
 	if !ok {
@@ -102,6 +120,7 @@ func (g *Game) Update(cmd UpdateGameCommand) error {
 	return nil
 }
 
+// Join adds a new player to the game.
 func (g *Game) Join(cmd JoinGameCommand) error {
 	if g.IsPlayer(cmd.UserID) {
 		return nil
@@ -120,6 +139,7 @@ func (g *Game) Join(cmd JoinGameCommand) error {
 	return nil
 }
 
+// Restart resets the game state.
 func (g *Game) Restart(cmd RestartGameCommand) error {
 	_, ok := g.players[cmd.UserID]
 	if !ok {
@@ -136,6 +156,7 @@ func (g *Game) Restart(cmd RestartGameCommand) error {
 	return nil
 }
 
+// Vote performs a player voting.
 func (g *Game) Vote(cmd VoteCommand) error {
 	if !g.IsPlayer(cmd.UserID) {
 		return errors.New("user is not a player")
@@ -156,6 +177,7 @@ func (g *Game) Vote(cmd VoteCommand) error {
 	return nil
 }
 
+// Reveal opens all cards and stops the game.
 func (g *Game) Reveal(cmd RevealCardsCommand) error {
 	p, ok := g.players[cmd.UserID]
 	if !ok {
@@ -173,6 +195,7 @@ func (g *Game) Reveal(cmd RevealCardsCommand) error {
 	return nil
 }
 
+// UnVote removes a vote for a passenger.
 func (g *Game) UnVote(cmd UnVoteCommand) error {
 	if !g.IsPlayer(cmd.UserID) {
 		return errors.New("user is not a player")
@@ -189,16 +212,18 @@ func (g *Game) UnVote(cmd UnVoteCommand) error {
 	return nil
 }
 
+// ForceChanged marks the aggregate as changes (dirty state).
 func (g *Game) ForceChanged() {
 	g.setChanged()
 }
 
+// IsPlayer checks if specific user is a player.
 func (g *Game) IsPlayer(uid string) bool {
 	_, ok := g.players[uid]
 	return ok
 }
 
-// Ping additionally does a players cleanup. Who does not ping for several seconds, will be removed.
+// Ping maintains players state and does a players cleanup if needed.
 func (g *Game) Ping(uid string) error {
 	p, ok := g.players[uid]
 	if !ok {

@@ -26,12 +26,6 @@ func internalError(c *gin.Context, err error) {
 	})
 }
 
-func notFoundError(c *gin.Context, err error) {
-	c.JSON(http.StatusNotFound, httpErr{
-		Error: err.Error(),
-	})
-}
-
 func unauthorizedError(c *gin.Context, err error) {
 	c.JSON(http.StatusUnauthorized, httpErr{
 		Error: err.Error(),

@@ -1,0 +1,43 @@
+run:
+  timeout: 5m
+  tests: true
+  modules-download-mode: vendor
+  build-tags:
+    - component
+    - integration
+linters:
+  disable-all: true
+  enable:
+    - govet
+    - revive
+    - gosec
+    - unparam
+    - goconst
+    - prealloc
+    - stylecheck
+    - unconvert
+    - errcheck
+    - deadcode
+    - ineffassign
+    - structcheck
+    - staticcheck
+    - unused
+    - varcheck
+    - bodyclose
+    - contextcheck
+    - cyclop
+    - errname
+    - errorlint
+    - exportloopref
+    - gocognit
+    - gocritic
+    - godot
+    - gofmt
+    - ireturn
+    - misspell
+    - nestif
+    - nilerr
+    - testpackage
+    - tparallel
+issues:
+  exclude-use-default: false

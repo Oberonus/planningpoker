@@ -1,5 +1,6 @@
 package games
 
+// CreateGameCommand is a game creation command.
 type CreateGameCommand struct {
 	UserID            string
 	Name              string
@@ -8,6 +9,7 @@ type CreateGameCommand struct {
 	EveryoneCanReveal bool
 }
 
+// NewCreateGameCommand creates a new command instance.
 func NewCreateGameCommand(name, ticketURL, userID string, deck CardsDeck, everyoneCanReveal bool) (*CreateGameCommand, error) {
 	return &CreateGameCommand{
 		UserID:            userID,
@@ -18,6 +20,7 @@ func NewCreateGameCommand(name, ticketURL, userID string, deck CardsDeck, everyo
 	}, nil
 }
 
+// UpdateGameCommand is a game update command.
 type UpdateGameCommand struct {
 	GameID    string
 	UserID    string
@@ -25,6 +28,7 @@ type UpdateGameCommand struct {
 	TicketURL string
 }
 
+// NewUpdateGameCommand creates a new command instance.
 func NewUpdateGameCommand(id string, name string, ticketURL string, userID string) (*UpdateGameCommand, error) {
 	return &UpdateGameCommand{
 		GameID:    id,
@@ -34,11 +38,13 @@ func NewUpdateGameCommand(id string, name string, ticketURL string, userID strin
 	}, nil
 }
 
+// JoinGameCommand is a join game command.
 type JoinGameCommand struct {
 	GameID string
 	UserID string
 }
 
+// NewJoinGameCommand creates a new command instance.
 func NewJoinGameCommand(gameID, userID string) (*JoinGameCommand, error) {
 	return &JoinGameCommand{
 		GameID: gameID,
@@ -46,12 +52,14 @@ func NewJoinGameCommand(gameID, userID string) (*JoinGameCommand, error) {
 	}, nil
 }
 
+// VoteCommand is a user voting command.
 type VoteCommand struct {
 	GameID string
 	UserID string
 	Vote   Card
 }
 
+// NewVoteCommand creates a new command instance.
 func NewVoteCommand(gameID, userID string, card Card) (*VoteCommand, error) {
 	return &VoteCommand{
 		GameID: gameID,
@@ -60,11 +68,13 @@ func NewVoteCommand(gameID, userID string, card Card) (*VoteCommand, error) {
 	}, nil
 }
 
+// UnVoteCommand is a user un-voting command.
 type UnVoteCommand struct {
 	GameID string
 	UserID string
 }
 
+// NewUnVoteCommand creates a new command instance.
 func NewUnVoteCommand(gameID, userID string) (*UnVoteCommand, error) {
 	return &UnVoteCommand{
 		GameID: gameID,
@@ -72,11 +82,13 @@ func NewUnVoteCommand(gameID, userID string) (*UnVoteCommand, error) {
 	}, nil
 }
 
+// RestartGameCommand is a game restart command.
 type RestartGameCommand struct {
 	GameID string
 	UserID string
 }
 
+// NewRestartGameCommand creates a new command instance.
 func NewRestartGameCommand(gameID, userID string) (*RestartGameCommand, error) {
 	return &RestartGameCommand{
 		GameID: gameID,
@@ -84,11 +96,13 @@ func NewRestartGameCommand(gameID, userID string) (*RestartGameCommand, error) {
 	}, nil
 }
 
+// RevealCardsCommand is a stop-game-and-reveal-cards command.
 type RevealCardsCommand struct {
 	GameID string
 	UserID string
 }
 
+// NewRevealCardsCommand creates a new command instance.
 func NewRevealCardsCommand(gameID, userID string) (*RevealCardsCommand, error) {
 	return &RevealCardsCommand{
 		GameID: gameID,
@@ -96,11 +110,13 @@ func NewRevealCardsCommand(gameID, userID string) (*RevealCardsCommand, error) {
 	}, nil
 }
 
+// PlayerPingCommand is a player heartbeat command.
 type PlayerPingCommand struct {
 	GameID string
 	UserID string
 }
 
+// NewPlayerPingCommand creates a new command instance.
 func NewPlayerPingCommand(gameID, userID string) (*PlayerPingCommand, error) {
 	return &PlayerPingCommand{
 		GameID: gameID,

@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (h *API) GameState(c *gin.Context, user *users.User) {
+func (h *API) gameState(c *gin.Context, user *users.User) {
 	gameID := c.Param("gameID")
 	lastChangeID := c.Query("lastChangeID")
 

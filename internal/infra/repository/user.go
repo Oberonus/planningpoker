@@ -12,17 +12,20 @@ type userDTO struct {
 	Token string `json:"token"`
 }
 
+// MemoryUserRepository is a simple in-memory linear users repository.
 type MemoryUserRepository struct {
 	m     sync.RWMutex
 	users map[string][]byte
 }
 
+// NewMemoryUserRepository creates an in-memory users repository instance.
 func NewMemoryUserRepository() *MemoryUserRepository {
 	return &MemoryUserRepository{
 		users: make(map[string][]byte),
 	}
 }
 
+// Get retrieves the user by ID.
 func (r *MemoryUserRepository) Get(id string) (*users.User, error) {
 	r.m.RLock()
 	raw, ok := r.users[id]
@@ -41,6 +44,7 @@ func (r *MemoryUserRepository) Get(id string) (*users.User, error) {
 	return users.NewRaw(dto.ID, dto.Name), nil
 }
 
+// GetMany retrieves many users.
 func (r *MemoryUserRepository) GetMany(ids []string) ([]users.User, error) {
 	list := make([]users.User, 0, len(ids))
 	for _, id := range ids {
@@ -57,6 +61,7 @@ func (r *MemoryUserRepository) GetMany(ids []string) ([]users.User, error) {
 	return list, nil
 }
 
+// Save persists the user.
 func (r *MemoryUserRepository) Save(user users.User) error {
 	dto := userDTO{
 		ID:   user.ID(),
