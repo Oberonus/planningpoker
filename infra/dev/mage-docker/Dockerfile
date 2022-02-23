@@ -15,9 +15,10 @@ RUN wget -qc https://github.com/magefile/mage/releases/download/v${MAGE_VERSION}
 ARG GOLANGCILINT_VERSION=1.43.0
 RUN wget -qc https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh -O - | /bin/sh -s -- -b "$(go env GOPATH)/bin" v${GOLANGCILINT_VERSION}
 
+ARG MAGE_ARCH
 ENV APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1
 RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - && \
-    add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable" && \
+    add-apt-repository "deb [arch=${MAGE_ARCH}] https://download.docker.com/linux/debian $(lsb_release -cs) stable" && \
     apt-get -y update && \
     apt-get install -y docker-ce \
     --no-install-recommends \
