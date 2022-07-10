@@ -3,8 +3,9 @@ package games
 
 import (
 	"errors"
+	"planningpoker/internal/domain"
+	"planningpoker/internal/domain/events"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -14,20 +15,17 @@ const (
 	GameStateStarted = "started"
 	// GameStateFinished represents finished game state.
 	GameStateFinished = "finished"
-
-	// StalePlayerTTL is a timeout when a player will be automatically removed from a game in case of no Pings.
-	StalePlayerTTL = 10 * time.Second
 )
 
 // Game is a domain aggregate that represents one single game.
 type Game struct {
+	domain.BaseAggregate
 	id                string
 	name              string
 	ticketURL         string
 	cardsDeck         CardsDeck
 	players           map[string]*Player
 	state             string
-	changeID          string
 	everyoneCanReveal bool
 }
 
@@ -35,7 +33,7 @@ type Game struct {
 type Player struct {
 	VotedCard *Card
 	CanReveal bool
-	LastPing  time.Time
+	Active    bool
 }
 
 // NewGame creates a new game aggregate instance.
@@ -53,7 +51,7 @@ func NewGame(cmd CreateGameCommand) *Game {
 
 // NewRaw instantiates a game aggregate from raw data.
 // It should never be used in any logic except aggregate hydration from any serialized format (db, etc...)
-func NewRaw(id, name, ticketURL string, deck CardsDeck, players map[string]*Player, state, cid string, ecr bool) *Game {
+func NewRaw(id, name, ticketURL string, deck CardsDeck, players map[string]*Player, state string, ecr bool) *Game {
 	return &Game{
 		id:                id,
 		name:              name,
@@ -61,7 +59,6 @@ func NewRaw(id, name, ticketURL string, deck CardsDeck, players map[string]*Play
 		cardsDeck:         deck,
 		players:           players,
 		state:             state,
-		changeID:          cid,
 		everyoneCanReveal: ecr,
 	}
 }
@@ -101,11 +98,6 @@ func (g Game) EveryoneCanReveal() bool {
 	return g.everyoneCanReveal
 }
 
-// ChangeID returns internal change ID which shows that the aggregate was changed.
-func (g Game) ChangeID() string {
-	return g.changeID
-}
-
 // Update updates game generic data.
 func (g *Game) Update(cmd UpdateGameCommand) error {
 	_, ok := g.players[cmd.UserID]
@@ -122,7 +114,10 @@ func (g *Game) Update(cmd UpdateGameCommand) error {
 
 // Join adds a new player to the game.
 func (g *Game) Join(cmd JoinGameCommand) error {
+	g.setChanged()
+
 	if g.IsPlayer(cmd.UserID) {
+		g.players[cmd.UserID].Active = true
 		return nil
 	}
 
@@ -131,10 +126,28 @@ func (g *Game) Join(cmd JoinGameCommand) error {
 	g.players[cmd.UserID] = &Player{
 		VotedCard: nil,
 		CanReveal: canReveal,
-		LastPing:  time.Now(),
+		Active:    true,
+	}
+
+	return nil
+}
+
+// Leave marks a player as inactive or removes them from players depending on voting state.
+func (g *Game) Leave(cmd LeaveGameCommand) error {
+	p, ok := g.players[cmd.UserID]
+	if !ok {
+		return nil
 	}
 
 	g.setChanged()
+
+	// if the player is voted, we don't want to delete the data until cards not revealed.
+	if p.VotedCard != nil {
+		p.Active = false
+		return nil
+	}
+
+	delete(g.players, cmd.UserID)
 
 	return nil
 }
@@ -147,9 +160,16 @@ func (g *Game) Restart(cmd RestartGameCommand) error {
 	}
 	g.state = GameStateStarted
 
-	for _, p := range g.players {
-		p.VotedCard = nil
+	// cleanup non-active players and remove votes
+	players := g.players
+	for id, p := range g.players {
+		if !p.Active {
+			delete(players, id)
+			continue
+		}
+		players[id].VotedCard = nil
 	}
+	g.players = players
 
 	g.setChanged()
 
@@ -223,43 +243,6 @@ func (g *Game) IsPlayer(uid string) bool {
 	return ok
 }
 
-// Ping maintains players state and does a players cleanup if needed.
-func (g *Game) Ping(uid string) error {
-	p, ok := g.players[uid]
-	if !ok {
-		return errors.New("user is not a player")
-	}
-	p.LastPing = time.Now()
-
-	// cleanup stale players who did not vote
-	newPlayers := make(map[string]*Player)
-	hasRevealer := false
-	for id, p := range g.players {
-		if p.LastPing.Add(StalePlayerTTL).After(time.Now()) || p.VotedCard != nil {
-			newPlayers[id] = p
-			if p.CanReveal {
-				hasRevealer = true
-			}
-		}
-	}
-
-	// choose random admin since master left
-	if !hasRevealer {
-		for k := range newPlayers {
-			newPlayers[k].CanReveal = true
-			break
-		}
-	}
-
-	if len(g.players) != len(newPlayers) {
-		g.setChanged()
-	}
-
-	g.players = newPlayers
-
-	return nil
-}
-
 func (g *Game) setChanged() {
-	g.changeID = uuid.NewString()
+	g.AddEvent(events.NewDomainEventBuilder(events.EventTypeGameUpdated).ForAggregate(g.id).Build())
 }

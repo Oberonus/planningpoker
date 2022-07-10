@@ -110,15 +110,15 @@ func NewRevealCardsCommand(gameID, userID string) (*RevealCardsCommand, error) {
 	}, nil
 }
 
-// PlayerPingCommand is a player heartbeat command.
-type PlayerPingCommand struct {
+// LeaveGameCommand is a leave game command.
+type LeaveGameCommand struct {
 	GameID string
 	UserID string
 }
 
-// NewPlayerPingCommand creates a new command instance.
-func NewPlayerPingCommand(gameID, userID string) (*PlayerPingCommand, error) {
-	return &PlayerPingCommand{
+// NewLeaveGameCommand forces a player to leave the game.
+func NewLeaveGameCommand(gameID, userID string) (*LeaveGameCommand, error) {
+	return &LeaveGameCommand{
 		GameID: gameID,
 		UserID: userID,
 	}, nil

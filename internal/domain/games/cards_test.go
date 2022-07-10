@@ -1,8 +1,9 @@
 package games_test
 
 import (
-	"planningpoker/internal/domain/games"
 	"testing"
+
+	"planningpoker/internal/domain/games"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

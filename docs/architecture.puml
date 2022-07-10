@@ -1,0 +1,42 @@
+@startuml
+
+package "Domain" {
+    rectangle "Aggregates" as aggregates
+    rectangle "Domain Services" as domain_services
+}
+
+queue "Event Bus" as event_bus
+rectangle "Repositories" as repositories
+database "Database" as db
+
+rectangle "API adapters" {
+    rectangle "Async API\nsocket.io" as async
+    rectangle "Sync API\nHTTP" as http
+}
+
+domain_services -u-> aggregates
+domain_services ..> event_bus
+event_bus -> domain_services
+
+domain_services ..> repositories
+
+domain_services ..> async
+async --> domain_services
+
+repositories ..> db
+
+repositories -> event_bus
+
+
+http->domain_services
+
+actor "Player" as player
+
+async <--- player
+http <--- player
+
+rectangle "Frontend assets" as assets
+
+http -u-> assets
+
+@enduml

@@ -4,21 +4,26 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"planningpoker/internal/domain/games"
 	"sync"
+
+	"github.com/sirupsen/logrus"
+	"planningpoker/internal/domain/events"
+	"planningpoker/internal/domain/games"
 )
 
 // MemoryGameRepository is a simple in-memory linear games repository.
 type MemoryGameRepository struct {
-	gm    sync.RWMutex
-	m     sync.RWMutex
-	games map[string][]byte
+	gm       sync.RWMutex
+	m        sync.RWMutex
+	games    map[string][]byte
+	eventBus events.EventBus
 }
 
 // NewMemoryGameRepository creates a new in-memory repository instance.
-func NewMemoryGameRepository() *MemoryGameRepository {
+func NewMemoryGameRepository(bus events.EventBus) *MemoryGameRepository {
 	return &MemoryGameRepository{
-		games: make(map[string][]byte),
+		games:    make(map[string][]byte),
+		eventBus: bus,
 	}
 }
 
@@ -56,7 +61,6 @@ func (r *MemoryGameRepository) Save(game *games.Game) error {
 		CardsDeck:         newCardsDeckDTO(game.CardsDeck()),
 		Players:           make(map[string]playerDTO),
 		State:             game.State(),
-		ChangeID:          game.ChangeID(),
 		EveryoneCanReveal: game.EveryoneCanReveal(),
 	}
 
@@ -68,7 +72,7 @@ func (r *MemoryGameRepository) Save(game *games.Game) error {
 		dto.Players[id] = playerDTO{
 			VotedCard: votedCard,
 			CanReveal: p.CanReveal,
-			LastPing:  p.LastPing,
+			Active:    p.Active,
 		}
 	}
 
@@ -80,6 +84,15 @@ func (r *MemoryGameRepository) Save(game *games.Game) error {
 	r.m.Lock()
 	defer r.m.Unlock()
 	r.games[game.ID()] = raw
+
+	for _, e := range game.GetEvents() {
+		if err := r.eventBus.Publish(e); err != nil {
+			// this is a simple handler, which provides at most once delivery
+			// in case if a bus is broken, it will log the error and continue
+			// TODO: implement outbox pattern in order to mitigate potential distributed transactions
+			logrus.Errorf("failed to publish a game event: %v", err)
+		}
+	}
 
 	return nil
 }

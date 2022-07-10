@@ -1,11 +1,10 @@
 import game from "@/models/game";
+import notifier from "@/notifier/notifier";
 
 const stateRunning = 'started'
 const stateFinished = 'finished'
 
 export default class {
-    workerID;
-
     id;
     name;
     ticket_url;
@@ -14,11 +13,10 @@ export default class {
     players;
     voted_card;
     can_reveal;
-    change_id;
 
     constructor(id) {
         this.id = id
-        this.updatePeriodically()
+        notifier.listenGame(id, state => this.updateState(state))
     }
 
     getCards() {
@@ -71,28 +69,11 @@ export default class {
         }
     }
 
-    // long polling operation, will throttle in case of any exception
-    async updatePeriodically() {
-        try {
-            await game.ping(this.id)
-            await this.update()
-            setTimeout(async () => {
-                await this.updatePeriodically()
-            }, 0)
-        } catch (e) {
-            setTimeout(async () => {
-                await this.updatePeriodically()
-            }, 1000)
-            throw e
-        }
-    }
-
     stopUpdates() {
-        clearInterval(this.workerID)
+        notifier.leaveGame()
     }
 
-    async update() {
-        const state = await game.state(this.id, this.change_id)
+    updateState(state) {
         for (const attribute in state) {
             this[attribute] = state[attribute];
         }

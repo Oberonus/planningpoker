@@ -1,22 +1,31 @@
 # github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78
+## explicit
 github.com/Azure/go-ansiterm
 github.com/Azure/go-ansiterm/winterm
 # github.com/Microsoft/go-winio v0.5.1
+## explicit; go 1.12
 github.com/Microsoft/go-winio
 github.com/Microsoft/go-winio/pkg/guid
 # github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5
+## explicit
 github.com/Nvveen/Gotty
 # github.com/ajg/form v1.5.1
+## explicit
 github.com/ajg/form
 # github.com/andybalholm/brotli v1.0.2
+## explicit; go 1.12
 github.com/andybalholm/brotli
 # github.com/cenkalti/backoff/v4 v4.1.2
+## explicit; go 1.13
 github.com/cenkalti/backoff/v4
 # github.com/containerd/continuity v0.0.0-20190827140505-75bee3e2ccb6
+## explicit
 github.com/containerd/continuity/pathdriver
 # github.com/davecgh/go-spew v1.1.1
+## explicit
 github.com/davecgh/go-spew/spew
 # github.com/docker/cli v20.10.11+incompatible
+## explicit
 github.com/docker/cli/cli/compose/interpolation
 github.com/docker/cli/cli/compose/loader
 github.com/docker/cli/cli/compose/schema
@@ -24,6 +33,7 @@ github.com/docker/cli/cli/compose/template
 github.com/docker/cli/cli/compose/types
 github.com/docker/cli/opts
 # github.com/docker/docker v20.10.7+incompatible
+## explicit
 github.com/docker/docker/api/types
 github.com/docker/docker/api/types/blkiodev
 github.com/docker/docker/api/types/container
@@ -36,85 +46,129 @@ github.com/docker/docker/api/types/swarm
 github.com/docker/docker/api/types/swarm/runtime
 github.com/docker/docker/api/types/versions
 # github.com/docker/go-connections v0.4.0
+## explicit
 github.com/docker/go-connections/nat
 # github.com/docker/go-units v0.4.0
+## explicit
 github.com/docker/go-units
 # github.com/fatih/structs v1.0.0
+## explicit
 github.com/fatih/structs
 # github.com/gavv/httpexpect/v2 v2.3.1
-## explicit
+## explicit; go 1.14
 github.com/gavv/httpexpect/v2
 # github.com/gin-contrib/gzip v0.0.3
-## explicit
+## explicit; go 1.13
 github.com/gin-contrib/gzip
 # github.com/gin-contrib/sse v0.1.0
+## explicit; go 1.12
 github.com/gin-contrib/sse
 # github.com/gin-gonic/contrib v0.0.0-20201101042839-6a891bf89f19
 ## explicit
 github.com/gin-gonic/contrib/static
 # github.com/gin-gonic/gin v1.6.3
-## explicit
+## explicit; go 1.13
 github.com/gin-gonic/gin
 github.com/gin-gonic/gin/binding
 github.com/gin-gonic/gin/internal/bytesconv
 github.com/gin-gonic/gin/internal/json
 github.com/gin-gonic/gin/render
 # github.com/go-playground/locales v0.13.0
+## explicit; go 1.13
 github.com/go-playground/locales
 github.com/go-playground/locales/currency
 # github.com/go-playground/universal-translator v0.17.0
+## explicit; go 1.13
 github.com/go-playground/universal-translator
 # github.com/go-playground/validator/v10 v10.2.0
+## explicit; go 1.13
 github.com/go-playground/validator/v10
+# github.com/gofrs/uuid v4.0.0+incompatible
+## explicit
+github.com/gofrs/uuid
 # github.com/gogo/protobuf v1.3.2
+## explicit; go 1.15
 github.com/gogo/protobuf/proto
 # github.com/golang/protobuf v1.5.0
+## explicit; go 1.9
 github.com/golang/protobuf/proto
+# github.com/gomodule/redigo v1.8.4
+## explicit; go 1.14
+github.com/gomodule/redigo/redis
 # github.com/google/go-querystring v1.0.0
+## explicit
 github.com/google/go-querystring/query
 # github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
+## explicit; go 1.13
 github.com/google/shlex
 # github.com/google/uuid v1.2.0
 ## explicit
 github.com/google/uuid
+# github.com/googollee/go-socket.io v1.6.2
+## explicit; go 1.16
+github.com/googollee/go-socket.io
+github.com/googollee/go-socket.io/engineio
+github.com/googollee/go-socket.io/engineio/frame
+github.com/googollee/go-socket.io/engineio/packet
+github.com/googollee/go-socket.io/engineio/payload
+github.com/googollee/go-socket.io/engineio/session
+github.com/googollee/go-socket.io/engineio/transport
+github.com/googollee/go-socket.io/engineio/transport/polling
+github.com/googollee/go-socket.io/engineio/transport/utils
+github.com/googollee/go-socket.io/engineio/transport/websocket
+github.com/googollee/go-socket.io/parser
 # github.com/gorilla/websocket v1.4.2
+## explicit; go 1.12
 github.com/gorilla/websocket
 # github.com/imdario/mergo v0.3.12
+## explicit; go 1.13
 github.com/imdario/mergo
 # github.com/imkira/go-interpol v1.0.0
+## explicit
 github.com/imkira/go-interpol
 # github.com/json-iterator/go v1.1.9
+## explicit; go 1.12
 github.com/json-iterator/go
 # github.com/klauspost/compress v1.12.2
+## explicit; go 1.13
 github.com/klauspost/compress/flate
 github.com/klauspost/compress/gzip
 github.com/klauspost/compress/zlib
 # github.com/leodido/go-urn v1.2.0
+## explicit; go 1.13
 github.com/leodido/go-urn
 # github.com/magefile/mage v1.12.1
-## explicit
+## explicit; go 1.12
 github.com/magefile/mage/mg
 github.com/magefile/mage/sh
 # github.com/mattn/go-isatty v0.0.12
+## explicit; go 1.12
 github.com/mattn/go-isatty
 # github.com/mitchellh/mapstructure v1.4.1
+## explicit; go 1.14
 github.com/mitchellh/mapstructure
 # github.com/moby/term v0.0.0-20201216013528-df9cb8a40635
+## explicit; go 1.13
 github.com/moby/term
 github.com/moby/term/windows
 # github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421
+## explicit
 github.com/modern-go/concurrent
 # github.com/modern-go/reflect2 v0.0.0-20180701023420-4b7aa43c6742
+## explicit
 github.com/modern-go/reflect2
 # github.com/opencontainers/go-digest v1.0.0-rc1
+## explicit
 github.com/opencontainers/go-digest
 # github.com/opencontainers/image-spec v1.0.2
+## explicit
 github.com/opencontainers/image-spec/specs-go
 github.com/opencontainers/image-spec/specs-go/v1
 # github.com/opencontainers/runc v1.0.2
+## explicit; go 1.13
 github.com/opencontainers/runc/libcontainer/user
 # github.com/ory/dockertest/v3 v3.8.1
-## explicit
+## explicit; go 1.13
 github.com/ory/dockertest/v3
 github.com/ory/dockertest/v3/docker
 github.com/ory/dockertest/v3/docker/opts
@@ -139,46 +193,62 @@ github.com/ory/dockertest/v3/docker/types/registry
 github.com/ory/dockertest/v3/docker/types/strslice
 github.com/ory/dockertest/v3/docker/types/versions
 # github.com/pkg/errors v0.9.1
+## explicit
 github.com/pkg/errors
 # github.com/pmezard/go-difflib v1.0.0
+## explicit
 github.com/pmezard/go-difflib/difflib
 # github.com/sergi/go-diff v1.0.0
+## explicit
 github.com/sergi/go-diff/diffmatchpatch
 # github.com/sirupsen/logrus v1.8.1
+## explicit; go 1.13
 github.com/sirupsen/logrus
 # github.com/stretchr/testify v1.7.0
-## explicit
+## explicit; go 1.13
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
 # github.com/ugorji/go/codec v1.1.7
+## explicit
 github.com/ugorji/go/codec
 # github.com/valyala/bytebufferpool v1.0.0
+## explicit
 github.com/valyala/bytebufferpool
 # github.com/valyala/fasthttp v1.27.0
+## explicit; go 1.12
 github.com/valyala/fasthttp
 github.com/valyala/fasthttp/fasthttputil
 github.com/valyala/fasthttp/stackless
 # github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f
+## explicit
 github.com/xeipuuv/gojsonpointer
 # github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415
+## explicit
 github.com/xeipuuv/gojsonreference
 # github.com/xeipuuv/gojsonschema v1.2.0
+## explicit
 github.com/xeipuuv/gojsonschema
 # github.com/yalp/jsonpath v0.0.0-20180802001716-5cc68e5049a0
+## explicit
 github.com/yalp/jsonpath
 # github.com/yudai/gojsondiff v1.0.0
+## explicit
 github.com/yudai/gojsondiff
 github.com/yudai/gojsondiff/formatter
 # github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82
+## explicit
 github.com/yudai/golcs
 # golang.org/x/net v0.0.0-20210510120150-4163338589ed
+## explicit; go 1.17
 golang.org/x/net/context
 golang.org/x/net/publicsuffix
 # golang.org/x/sys v0.0.0-20210514084401-e8d321eab015
+## explicit; go 1.17
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 # google.golang.org/protobuf v1.26.0
+## explicit; go 1.9
 google.golang.org/protobuf/encoding/prototext
 google.golang.org/protobuf/encoding/protowire
 google.golang.org/protobuf/internal/descfmt
@@ -207,8 +277,11 @@ google.golang.org/protobuf/runtime/protoiface
 google.golang.org/protobuf/runtime/protoimpl
 google.golang.org/protobuf/types/descriptorpb
 # gopkg.in/yaml.v2 v2.3.0
+## explicit
 gopkg.in/yaml.v2
 # gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
+## explicit
 gopkg.in/yaml.v3
 # moul.io/http2curl v1.0.1-0.20190925090545-5cd742060b0e
+## explicit; go 1.13
 moul.io/http2curl

@@ -3,8 +3,11 @@ package events
 import "time"
 
 const (
-	// EventTypeUserUpdated is a domain event that user information was updated..
+	// EventTypeUserUpdated is a domain event that user information was updated.
 	EventTypeUserUpdated = "user:updated"
+
+	// EventTypeGameUpdated is a domain event that game state has changed.
+	EventTypeGameUpdated = "game:updated"
 )
 
 // DomainEvent is a generic domain event.

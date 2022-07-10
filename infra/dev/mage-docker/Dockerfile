@@ -8,11 +8,11 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/*
 
 # Download and install mage file into bin path
-ARG MAGE_VERSION=1.11.0
+ARG MAGE_VERSION=1.12.1
 RUN wget -qc https://github.com/magefile/mage/releases/download/v${MAGE_VERSION}/mage_${MAGE_VERSION}_Linux-64bit.tar.gz -O - | tar -xz -C /usr/bin mage
 
 # Download and install golangci-lint into go bin path
-ARG GOLANGCILINT_VERSION=1.43.0
+ARG GOLANGCILINT_VERSION=1.44.2
 RUN wget -qc https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh -O - | /bin/sh -s -- -b "$(go env GOPATH)/bin" v${GOLANGCILINT_VERSION}
 
 ARG MAGE_ARCH

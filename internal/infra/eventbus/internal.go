@@ -2,8 +2,9 @@
 package eventbus
 
 import (
-	"planningpoker/internal/domain/events"
 	"sync"
+
+	"planningpoker/internal/domain/events"
 )
 
 // InternalBus represents a simple in-service pub/sub service for domain events.

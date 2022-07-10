@@ -2,15 +2,14 @@ package state_test
 
 import (
 	"errors"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"planningpoker/internal/domain/games"
 	"planningpoker/internal/domain/state"
 	"planningpoker/internal/domain/users"
 	"planningpoker/test"
-	"testing"
-	"time"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestNewService(t *testing.T) {
@@ -65,18 +64,13 @@ func TestGamesService_GameState(t *testing.T) {
 			userRepo: usersRepoStub{},
 			expError: "",
 		},
-		"fail on error": {
-			gameRepo: gamesRepoStub{game: newTestServiceGame(t).Instance()},
-			userRepo: usersRepoStub{},
-			expError: "user is not a player",
-		},
 		"fail on games repo error": {
 			gameRepo: gamesRepoStub{
 				game:   newTestServiceGame(t).UserJoins(test.User1).Instance(),
 				getErr: errors.New("get failed"),
 			},
 			userRepo: usersRepoStub{},
-			expError: "get failed",
+			expError: "get game: get failed",
 		},
 		"fail on users repo error": {
 			gameRepo: gamesRepoStub{game: newTestServiceGame(t).UserJoins(test.User1).Instance()},
@@ -92,10 +86,7 @@ func TestGamesService_GameState(t *testing.T) {
 			srv, err := state.NewService(tt.gameRepo, tt.userRepo)
 			require.NoError(t, err)
 
-			cmd, err := state.NewGameStateCommand("anything", test.User1, time.Millisecond, "")
-			require.NoError(t, err)
-
-			st, err := srv.GameState(*cmd)
+			st, err := srv.GameState("anything")
 
 			if tt.expError != "" {
 				assert.EqualError(t, err, tt.expError)
