@@ -1,7 +1,7 @@
 FROM golang:1.17
 
 ARG MAGE_ARCH
-RUN echo Building mage CI image for $MAGE_ARCH architecture
+RUN echo Building mage CI image for "${MAGE_ARCH}" architecture
 
 RUN apt-get update && \
     apt-get install -y \
