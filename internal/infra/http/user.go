@@ -1,6 +1,7 @@
 package http
 
 import (
+	"errors"
 	"planningpoker/internal/domain/users"
 
 	"github.com/gin-gonic/gin"
@@ -33,13 +34,24 @@ func (h *API) register(c *gin.Context) {
 	})
 }
 
-func (h *API) currentUser(c *gin.Context, user *users.User) {
+func (h *API) currentUser(c *gin.Context, userID string) {
+	user, err := h.usersService.Get(userID)
+	if err != nil || user == nil {
+		badRequestError(c, err)
+		return
+	}
+
+	if user == nil {
+		badRequestError(c, errors.New("user not found"))
+		return
+	}
+
 	success(c, gin.H{
 		"name": user.Name(),
 	})
 }
 
-func (h *API) changeUserData(c *gin.Context, user *users.User) {
+func (h *API) changeUserData(c *gin.Context, userID string) {
 	pl := struct {
 		Name string `json:"name"`
 	}{}
@@ -48,7 +60,7 @@ func (h *API) changeUserData(c *gin.Context, user *users.User) {
 		return
 	}
 
-	cmd, err := users.NewUpdateCommand(user.ID(), pl.Name)
+	cmd, err := users.NewUpdateCommand(userID, pl.Name)
 	if err != nil {
 		badRequestError(c, err)
 		return

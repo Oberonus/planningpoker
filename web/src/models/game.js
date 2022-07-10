@@ -1,4 +1,4 @@
-import axios from 'axios'
+import notifier from "@/notifier/notifier";
 
 const cardsDeck = {
     name: "T-Shirt",
@@ -6,56 +6,45 @@ const cardsDeck = {
 }
 
 export default {
-    async create(name, url) {
-        const resp = await axios.post("games", {
+    create(name, url) {
+        const ob = {
             name: name,
             url: url,
             cards_deck: cardsDeck,
             everyone_can_reveal: true,
-        })
-        return resp.data.game_id
+        }
+
+        return new Promise((resolve) => {
+            notifier.socket.emit("create", ob, (data) => {
+                resolve(data.game_id)
+            })
+        });
     },
 
     async update(gameID, name, url) {
-        const resp = await axios.put(`games/${gameID}`, {
+        notifier.socket.emit("update", {
             name: name,
-            url: url,
+            ticket_url: url
         })
-        return resp.data
     },
 
-    async ping(gameID) {
-        const resp = await axios.post(`games/${gameID}/ping`)
-        return resp.data
-    },
-
-    async state(gameID, lastChangeID) {
-        const resp = await axios.get(`games/${gameID}?lastChangeID=${lastChangeID}`)
-        return resp.data
-    },
-
-    async join(gameID) {
-        const resp = await axios.post(`games/${gameID}/join`)
-        return resp.data
+    async leave() {
+        notifier.socket.emit("leave")
     },
 
     async vote(gameID, vote) {
-        const resp = await axios.post(`games/${gameID}/votes/${vote}`)
-        return resp.data
+        notifier.socket.emit("vote", vote)
     },
 
-    async reveal(gameID) {
-        const resp = await axios.post(`games/${gameID}/reveal`)
-        return resp.data
+    async reveal() {
+        notifier.socket.emit("reveal")
     },
 
-    async unVote(gameID) {
-        const resp = await axios.post(`games/${gameID}/unvote`)
-        return resp.data
+    async unVote() {
+        notifier.socket.emit("unvote")
     },
 
-    async restart(gameID) {
-        const resp = await axios.post(`games/${gameID}/restart`)
-        return resp.data
+    async restart() {
+        notifier.socket.emit("restart")
     },
 }

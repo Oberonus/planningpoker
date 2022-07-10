@@ -65,6 +65,14 @@ func (g *Game) UserVotes(uid, cardName string) *Game {
 	return g
 }
 
+// UserLeaves performs a user leave from game.
+func (g *Game) UserLeaves(uid string) *Game {
+	cmd, err := games.NewLeaveGameCommand(g.game.ID(), uid)
+	require.NoError(g.t, err)
+	g.lastError = g.game.Leave(*cmd)
+	return g
+}
+
 // UserUnVotes performs a user unvote.
 func (g *Game) UserUnVotes(uid string) *Game {
 	cmd, err := games.NewUnVoteCommand(g.game.ID(), uid)

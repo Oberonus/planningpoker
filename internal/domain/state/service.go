@@ -1,10 +1,8 @@
 package state
 
 import (
-	"context"
 	"errors"
-	"planningpoker/internal/domain/games"
-	"time"
+	"fmt"
 )
 
 // Service is a game state service.
@@ -29,17 +27,10 @@ func NewService(gr GameRepository, ur UsersRepository) (*Service, error) {
 }
 
 // GameState returns a current state of a game.
-func (s *Service) GameState(cmd GameStateCommand) (*GameState, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), cmd.WaitFor)
-	defer cancel()
-
-	game, err := s.getUpdatedState(ctx, cmd.GameID, cmd.LastChangeID)
-	if err != nil {
-		return nil, err
-	}
-
-	if !game.IsPlayer(cmd.UserID) {
-		return nil, errors.New("user is not a player")
+func (s *Service) GameState(gameID string) (*GameState, error) {
+	game, err := s.gamesRepo.Get(gameID)
+	if err != nil || game == nil {
+		return nil, fmt.Errorf("get game: %w", err)
 	}
 
 	userIDs := make([]string, 0)
@@ -52,26 +43,7 @@ func (s *Service) GameState(cmd GameStateCommand) (*GameState, error) {
 		return nil, err
 	}
 
-	state := NewStateForGame(cmd.UserID, *game, users)
+	state := NewStateForGame(*game, users)
 
 	return &state, nil
-}
-
-func (s *Service) getUpdatedState(ctx context.Context, gameID, lastKnownStateID string) (*games.Game, error) {
-	for {
-		game, err := s.gamesRepo.Get(gameID)
-		if err != nil {
-			return nil, err
-		}
-
-		if game.ChangeID() != lastKnownStateID {
-			return game, nil
-		}
-
-		select {
-		case <-ctx.Done():
-			return game, nil
-		case <-time.After(100 * time.Millisecond):
-		}
-	}
 }

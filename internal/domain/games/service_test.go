@@ -2,10 +2,11 @@ package games_test
 
 import (
 	"errors"
+	"testing"
+
 	"planningpoker/internal/domain/events"
 	"planningpoker/internal/domain/games"
 	"planningpoker/test"
-	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -206,44 +207,6 @@ func TestGamesService_Vote(t *testing.T) {
 	}
 }
 
-func TestGamesService_Ping(t *testing.T) {
-	t.Parallel()
-
-	testCases := map[string]struct {
-		gameRepo games.GameRepository
-		expError string
-	}{
-		"success": {
-			gameRepo: gamesRepoStub{game: newTestServiceGame(t).UserJoins(test.User1).Instance()},
-			expError: "",
-		},
-		"fail on error": {
-			gameRepo: gamesRepoStub{game: newTestServiceGame(t).Instance()},
-			expError: "user is not a player",
-		},
-	}
-
-	for name, tt := range testCases {
-		tt := tt
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-			srv, err := games.NewService(tt.gameRepo, eventBusStub{})
-			require.NoError(t, err)
-
-			cmd, err := games.NewPlayerPingCommand("anything", test.User1)
-			require.NoError(t, err)
-
-			err = srv.Ping(*cmd)
-
-			if tt.expError != "" {
-				assert.EqualError(t, err, tt.expError)
-			} else {
-				assert.NoError(t, err)
-			}
-		})
-	}
-}
-
 func TestGamesService_UnVote(t *testing.T) {
 	t.Parallel()
 
@@ -272,6 +235,40 @@ func TestGamesService_UnVote(t *testing.T) {
 			require.NoError(t, err)
 
 			err = srv.UnVote(*cmd)
+
+			if tt.expError != "" {
+				assert.EqualError(t, err, tt.expError)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestGamesService_Leave(t *testing.T) {
+	t.Parallel()
+
+	testCases := map[string]struct {
+		gameRepo games.GameRepository
+		expError string
+	}{
+		"success": {
+			gameRepo: gamesRepoStub{game: newTestServiceGame(t).UserJoins(test.User1).UserVotes(test.User1, "XS").Instance()},
+			expError: "",
+		},
+	}
+
+	for name, tt := range testCases {
+		tt := tt
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			srv, err := games.NewService(tt.gameRepo, eventBusStub{})
+			require.NoError(t, err)
+
+			cmd, err := games.NewLeaveGameCommand("anything", test.User1)
+			require.NoError(t, err)
+
+			err = srv.Leave(*cmd)
 
 			if tt.expError != "" {
 				assert.EqualError(t, err, tt.expError)
@@ -374,7 +371,7 @@ func (g gamesRepoStub) Save(*games.Game) error {
 	return g.saveError
 }
 
-func (g gamesRepoStub) GetActiveGamesByPlayerID(playerID string) ([]games.Game, error) {
+func (g gamesRepoStub) GetActiveGamesByPlayerID(string) ([]games.Game, error) {
 	return g.activeGames, g.getActiveGamesErr
 }
 

@@ -17,8 +17,12 @@ axios.defaults.baseURL = '/api/v1/'
 
 Vue.config.productionTip = false
 
-new Vue({
+const vue = new Vue({
     router,
     vuetify,
     render: h => h(App)
 }).$mount('#app')
+
+window.addEventListener('beforeunload', () => {
+    vue.$destroy();
+});

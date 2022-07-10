@@ -2,13 +2,13 @@ package http
 
 import (
 	"errors"
-	"planningpoker/internal/domain/users"
+	"github.com/sirupsen/logrus"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
-func (h *API) withUser(cb func(*gin.Context, *users.User)) gin.HandlerFunc {
+func (h *API) withUser(cb func(*gin.Context, string)) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		auth := c.GetHeader("Authorization")
 		parts := strings.Split(auth, " ")
@@ -17,23 +17,13 @@ func (h *API) withUser(cb func(*gin.Context, *users.User)) gin.HandlerFunc {
 			return
 		}
 
-		cmd, err := users.NewAuthByIDCommand(parts[1])
+		userID, err := h.authenticator.AuthenticateByToken(parts[1])
 		if err != nil {
-			badRequestError(c, err)
+			logrus.Infof("user auth failed: %v", err)
+			unauthorizedError(c, errors.New("unauthorized"))
 			return
 		}
 
-		user, err := h.usersService.AuthenticateByID(*cmd)
-		if err != nil {
-			unauthorizedError(c, err)
-			return
-		}
-
-		if user == nil {
-			unauthorizedError(c, errors.New("user not found"))
-			return
-		}
-
-		cb(c, user)
+		cb(c, userID)
 	}
 }

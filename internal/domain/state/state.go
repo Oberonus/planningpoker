@@ -8,33 +8,31 @@ import (
 
 // PlayerState represents a player state.
 type PlayerState struct {
+	UserID    string
 	Name      string
-	VotedCard *games.Card
-}
-
-// GameState represents a game state.
-type GameState struct {
-	Name      string
-	TicketURL string
-	ChangeID  string
-	CardsDeck games.CardsDeck
-	Players   []PlayerState
-	State     string
 	VotedCard *games.Card
 	CanReveal bool
 }
 
+// GameState represents a game state.
+type GameState struct {
+	GameID    string
+	Name      string
+	TicketURL string
+	CardsDeck games.CardsDeck
+	Players   []PlayerState
+	State     string
+}
+
 // NewStateForGame creates a new game state.
-func NewStateForGame(userID string, game games.Game, gamers []users.User) GameState {
+func NewStateForGame(game games.Game, gamers []users.User) GameState {
 	state := GameState{
+		GameID:    game.ID(),
 		CardsDeck: game.CardsDeck(),
 		Name:      game.Name(),
 		TicketURL: game.TicketURL(),
 		Players:   make([]PlayerState, 0, len(game.Players())),
 		State:     game.State(),
-		VotedCard: game.Players()[userID].VotedCard,
-		CanReveal: game.Players()[userID].CanReveal,
-		ChangeID:  game.ChangeID(),
 	}
 
 	for uid, p := range game.Players() {
@@ -43,16 +41,11 @@ func NewStateForGame(userID string, game games.Game, gamers []users.User) GameSt
 			userName = u.Name()
 		}
 
-		votedCard := p.VotedCard
-		// mask real votes if game is running
-		if game.State() == games.GameStateStarted && votedCard != nil {
-			unrevealedCard := games.NewUnrevealedCard()
-			votedCard = &unrevealedCard
-		}
-
 		state.Players = append(state.Players, PlayerState{
+			UserID:    uid,
 			Name:      userName,
-			VotedCard: votedCard,
+			VotedCard: p.VotedCard,
+			CanReveal: p.CanReveal,
 		})
 	}
 

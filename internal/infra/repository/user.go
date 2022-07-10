@@ -2,8 +2,11 @@ package repository
 
 import (
 	"encoding/json"
-	"planningpoker/internal/domain/users"
 	"sync"
+
+	"github.com/sirupsen/logrus"
+	"planningpoker/internal/domain/events"
+	"planningpoker/internal/domain/users"
 )
 
 type userDTO struct {
@@ -14,14 +17,16 @@ type userDTO struct {
 
 // MemoryUserRepository is a simple in-memory linear users repository.
 type MemoryUserRepository struct {
-	m     sync.RWMutex
-	users map[string][]byte
+	m        sync.RWMutex
+	users    map[string][]byte
+	eventBus events.EventBus
 }
 
 // NewMemoryUserRepository creates an in-memory users repository instance.
-func NewMemoryUserRepository() *MemoryUserRepository {
+func NewMemoryUserRepository(eventBus events.EventBus) *MemoryUserRepository {
 	return &MemoryUserRepository{
-		users: make(map[string][]byte),
+		users:    make(map[string][]byte),
+		eventBus: eventBus,
 	}
 }
 
@@ -76,6 +81,15 @@ func (r *MemoryUserRepository) Save(user users.User) error {
 	r.m.Lock()
 	defer r.m.Unlock()
 	r.users[user.ID()] = raw
+
+	for _, e := range user.GetEvents() {
+		if err := r.eventBus.Publish(e); err != nil {
+			// this is a simple handler, which provides at most once delivery
+			// in case if a bus is broken, it will log the error and continue
+			// TODO: implement outbox pattern in order to mitigate potential distributed transactions
+			logrus.Errorf("failed to publish a game event: %v", err)
+		}
+	}
 
 	return nil
 }

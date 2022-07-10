@@ -1,5 +1,6 @@
 const axios = require('axios');
 import ls from 'local-storage'
+import notifier from "@/notifier/notifier";
 
 export default {
     name: "",
@@ -26,6 +27,8 @@ export default {
                 throw e
             }
         }
+
+        notifier.connect(this.id)
 
         ls.set('user_name', this.name)
         ls.set('user_id', this.id)

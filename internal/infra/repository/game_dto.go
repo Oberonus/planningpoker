@@ -2,8 +2,6 @@ package repository
 
 import (
 	"fmt"
-	"time"
-
 	"planningpoker/internal/domain/games"
 )
 
@@ -39,9 +37,9 @@ func (d cardsDeckDTO) toDomain() (*games.CardsDeck, error) {
 }
 
 type playerDTO struct {
-	VotedCard string    `json:"voted_card"`
-	CanReveal bool      `json:"can_reveal"`
-	LastPing  time.Time `json:"last_ping"`
+	VotedCard string `json:"voted_card"`
+	CanReveal bool   `json:"can_reveal"`
+	Active    bool   `json:"active"`
 }
 
 func (d playerDTO) toDomain() (*games.Player, error) {
@@ -58,7 +56,7 @@ func (d playerDTO) toDomain() (*games.Player, error) {
 	return &games.Player{
 		VotedCard: votedCard,
 		CanReveal: d.CanReveal,
-		LastPing:  d.LastPing,
+		Active:    d.Active,
 	}, nil
 }
 
@@ -69,7 +67,6 @@ type gameDTO struct {
 	CardsDeck         cardsDeckDTO         `json:"cards_deck"`
 	Players           map[string]playerDTO `json:"players"`
 	State             string               `json:"state"`
-	ChangeID          string               `json:"change_id"`
 	EveryoneCanReveal bool                 `json:"everyone_can_reveal"`
 }
 
@@ -87,7 +84,7 @@ func (d gameDTO) toDomain() (*games.Game, error) {
 		}
 	}
 
-	game := games.NewRaw(d.ID, d.Name, d.TicketURL, *deck, players, d.State, d.ChangeID, d.EveryoneCanReveal)
+	game := games.NewRaw(d.ID, d.Name, d.TicketURL, *deck, players, d.State, d.EveryoneCanReveal)
 
 	return game, err
 }

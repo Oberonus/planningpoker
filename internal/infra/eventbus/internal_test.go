@@ -1,10 +1,11 @@
 package eventbus_test
 
 import (
-	"planningpoker/internal/domain/events"
-	"planningpoker/internal/infra/eventbus"
 	"testing"
 	"time"
+
+	"planningpoker/internal/domain/events"
+	"planningpoker/internal/infra/eventbus"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

@@ -5,11 +5,15 @@ import (
 	"errors"
 	"strings"
 
+	"planningpoker/internal/domain"
+	"planningpoker/internal/domain/events"
+
 	"github.com/google/uuid"
 )
 
 // User is a user aggregate.
 type User struct {
+	domain.BaseAggregate
 	id   string
 	name string
 }
@@ -51,6 +55,7 @@ func (u *User) NameAs(name string) error {
 		return errors.New("user name should be provided")
 	}
 	u.name = name
+	u.AddEvent(events.NewDomainEventBuilder(events.EventTypeUserUpdated).ForAggregate(u.ID()).Build())
 
 	return nil
 }

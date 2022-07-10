@@ -62,6 +62,13 @@ func (s *Service) Join(cmd JoinGameCommand) error {
 	})
 }
 
+// Leave forces a player to leave the game.
+func (s *Service) Leave(cmd LeaveGameCommand) error {
+	return s.gamesRepo.ModifyExclusively(cmd.GameID, func(game *Game) error {
+		return game.Leave(cmd)
+	})
+}
+
 // Restart restarts the game.
 func (s *Service) Restart(cmd RestartGameCommand) error {
 	return s.gamesRepo.ModifyExclusively(cmd.GameID, func(game *Game) error {
@@ -87,13 +94,6 @@ func (s *Service) UnVote(cmd UnVoteCommand) error {
 func (s *Service) Reveal(cmd RevealCardsCommand) error {
 	return s.gamesRepo.ModifyExclusively(cmd.GameID, func(game *Game) error {
 		return game.Reveal(cmd)
-	})
-}
-
-// Ping updates player state (assure that the player is still active).
-func (s *Service) Ping(cmd PlayerPingCommand) error {
-	return s.gamesRepo.ModifyExclusively(cmd.GameID, func(g *Game) error {
-		return g.Ping(cmd.UserID)
 	})
 }
 

@@ -2,10 +2,10 @@
 set -e
 
 MAGE_IMAGE=pp-builder:latest
-MAGE_ARCH=$(uname -m)
+TARGET_ARCH=$(uname -m)
 
 build_mage_image() {
-  docker build -t $MAGE_IMAGE -f ./infra/dev/mage-docker/Dockerfile --build-arg MAGE_ARCH=${MAGE_ARCH} ./infra/dev/mage-docker/
+  docker build -t $MAGE_IMAGE -f ./infra/dev/mage-docker/Dockerfile --build-arg TARGET_ARCH=${TARGET_ARCH} ./infra/dev/mage-docker/
 }
 
 # in case if a need the mage docker image can be rebuilt.
@@ -60,5 +60,5 @@ docker run --rm \
   --env REPO_DIRECTORY="$PWD" \
   --env MAGE_NETWORK_ID="$MAGE_NETWORK_ID" \
   --env MAGE_SESSION_ID="${MAGE_SESSION_ID}" \
-  --env MAGE_ARCH="${MAGE_ARCH}" \
+  --env TARGET_ARCH="${TARGET_ARCH}" \
   $MAGE_IMAGE "$@"

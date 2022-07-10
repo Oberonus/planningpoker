@@ -1,28 +1,27 @@
 package test_test
 
 import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"planningpoker/internal/domain/games"
 	"planningpoker/internal/domain/state"
 	"planningpoker/internal/domain/users"
 	"planningpoker/internal/infra/eventbus"
 	"planningpoker/internal/infra/repository"
-	"testing"
-	"time"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestWorkflow(t *testing.T) {
-	gamesRepo := repository.NewMemoryGameRepository()
-	usersRepo := repository.NewMemoryUserRepository()
 	eventBus := eventbus.NewInternalBus()
+	gamesRepo := repository.NewMemoryGameRepository(eventBus)
+	usersRepo := repository.NewMemoryUserRepository(eventBus)
 
 	gamesService, err := games.NewService(gamesRepo, eventBus)
 	require.NoError(t, err)
 	require.NotNil(t, gamesService)
 
-	usersService, err := users.NewService(usersRepo, eventBus)
+	usersService, err := users.NewService(usersRepo)
 	require.NoError(t, err)
 	require.NotNil(t, usersService)
 
@@ -64,39 +63,23 @@ func TestWorkflow(t *testing.T) {
 	err = gamesService.Vote(*voteCmd)
 	require.NoError(t, err)
 
-	pingCmd, err := games.NewPlayerPingCommand(gameID, user2.ID())
-	require.NoError(t, err)
-	err = gamesService.Ping(*pingCmd)
-	require.NoError(t, err)
-
-	stateCmd, err := state.NewGameStateCommand(gameID, user1.ID(), time.Second, "")
-	require.NoError(t, err)
-	st, err := stateService.GameState(*stateCmd)
+	st, err := stateService.GameState(gameID)
 	require.NoError(t, err)
 	require.NotNil(t, st)
 
 	assert.Len(t, st.Players, 2)
-	assert.Equal(t, "started", st.State)
-	assert.Equal(t, "XS", string(*st.VotedCard))
-	assert.Equal(t, true, st.CanReveal)
 
 	revealCmd, err := games.NewRevealCardsCommand(gameID, user1.ID())
 	require.NoError(t, err)
 	err = gamesService.Reveal(*revealCmd)
 	require.NoError(t, err)
 
-	stateCmd, err = state.NewGameStateCommand(gameID, user2.ID(), time.Second, "")
-	require.NoError(t, err)
-	st, err = stateService.GameState(*stateCmd)
+	st, err = stateService.GameState(gameID)
 	require.NoError(t, err)
 	require.NotNil(t, st)
 
 	assert.Len(t, st.Players, 2)
 	assert.Equal(t, "finished", st.State)
-	assert.Equal(t, "?", string(*st.VotedCard))
-	assert.Equal(t, false, st.CanReveal)
-
-	t.Logf("%+v", st)
 }
 
 func newTestCardsDeck(t *testing.T) games.CardsDeck {

@@ -31,6 +31,16 @@
               elevation="3">Invitation link copied to clipboard!
     </v-banner>
 
+    <v-banner v-if="notifier.status === notifier.STATUS_RECONNECTING" dark color="rgb(130,0,0)"
+              :style="'position:absolute; top:80px; left:10%; right: 10%; text-align: center; transition: opacity 0.3s ease-in-out;'"
+              elevation="3">Server connection lost. Attempting to reconnect...
+    </v-banner>
+
+    <v-banner v-if="notifier.listenStatus === notifier.STATUS_JOIN_FAILED" dark color="rgb(130,0,0)"
+              :style="'position:absolute; top:80px; left:10%; right: 10%; text-align: center; transition: opacity 0.3s ease-in-out;'"
+              elevation="3">Something went wrong. Please try to refresh the page. Sorry for this.
+    </v-banner>
+
     <v-row align="center" justify="center" v-if="state" style="min-height: 100px;">
     </v-row>
 
@@ -73,6 +83,7 @@ import UserNameDialog from "@/components/UserNameDialog";
 import CardOnTable from "@/components/CardOnTable";
 import InviteDialog from "@/components/InviteDialog";
 import GameSettingsDialog from "@/components/GameSettingsDialog"
+import notifier from "@/notifier/notifier";
 
 export default {
   name: 'Game',
@@ -89,6 +100,7 @@ export default {
     return {
       user: user,
       state: null,
+      notifier: notifier,
       invitationOpacity: 0,
     }
   },
@@ -101,7 +113,6 @@ export default {
       await user.authenticate()
 
       const gameID = this.$route.params.id
-      await game.join(gameID)
       this.state = new State(gameID)
     } catch (e) {
       console.log(e)

@@ -1,8 +1,9 @@
 package games_test
 
 import (
-	"planningpoker/test"
 	"testing"
+
+	"planningpoker/test"
 )
 
 func TestSimpleGame(t *testing.T) {
@@ -57,6 +58,15 @@ func TestNonPlayerCanNotRestartAGame(t *testing.T) {
 	test.NewTestGame(t, test.NewSimpleGame(t, true)).
 		When().UserJoins(test.User1).
 		And().UserRestartsGame(test.User2).
+		Then().ShouldFail("user is not a player")
+}
+
+func TestPlayerWhoLeftCanNotParticipate(t *testing.T) {
+	test.NewTestGame(t, test.NewSimpleGame(t, true)).
+		When().UserJoins(test.User1).
+		And().UserJoins(test.User2).
+		And().UserLeaves(test.User2).
+		And().UserVotes(test.User2, "S").
 		Then().ShouldFail("user is not a player")
 }
 

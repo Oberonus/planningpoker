@@ -1,8 +1,9 @@
 package users_test
 
 import (
-	"planningpoker/internal/domain/users"
 	"testing"
+
+	"planningpoker/internal/domain/users"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
