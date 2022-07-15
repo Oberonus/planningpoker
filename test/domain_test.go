@@ -25,7 +25,7 @@ func TestWorkflow(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, usersService)
 
-	stateService, err := state.NewService(gamesRepo, usersRepo)
+	stateService, err := state.NewService(gamesRepo, usersRepo, publisherStub{}, eventBus)
 	require.NoError(t, err)
 	require.NotNil(t, stateService)
 
@@ -95,4 +95,10 @@ func newTestCardsDeck(t *testing.T) games.CardsDeck {
 	require.NoError(t, err)
 
 	return *deck
+}
+
+type publisherStub struct{}
+
+func (p publisherStub) SendToPlayer(gameState state.GameState, userID string) error {
+	return nil
 }
