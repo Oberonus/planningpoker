@@ -2,8 +2,9 @@ package http
 
 import (
 	"errors"
-	"github.com/sirupsen/logrus"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/gin-gonic/gin"
 )

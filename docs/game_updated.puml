@@ -1,0 +1,43 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+participant EventBus
+participant StateService
+participant GamesRepository
+participant UsersRepository
+participant StateTransformer
+participant SocketIO
+participant Player
+
+EventBus->StateService: Game Updated Event
+activate StateService
+    StateService->GamesRepository: Get Game
+    activate GamesRepository
+        GamesRepository->StateService: Game Aggregate
+    deactivate GamesRepository
+
+    StateService->UsersRepository: Get all users who play the game
+
+    activate UsersRepository
+        UsersRepository->StateService: Users
+    deactivate UsersRepository
+
+    StateService->StateService: Create full game state
+
+    loop "all players"
+        StateService->StateTransformer: Create state for a player
+        activate StateTransformer
+            StateTransformer->StateService: Payload for a player
+        deactivate StateTransformer
+
+        StateService->SocketIO: Send state to a player
+        activate SocketIO
+            SocketIO-->Player: State
+            SocketIO->StateService: OK
+        deactivate SocketIO
+    end
+
+    StateService ->o StateService: End
+deactivate StateService
+
+@enduml

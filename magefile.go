@@ -14,6 +14,7 @@ import (
 
 const (
 	nodeImageTag = "node:14-alpine"
+	goImageTag   = "golang:1.15"
 )
 
 // Lint runs golang-ci linter.

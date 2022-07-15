@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+
 	"planningpoker/internal/infra/transformers"
 
 	"github.com/gin-gonic/gin"
@@ -15,8 +16,10 @@ import (
 	"planningpoker/internal/domain/games"
 )
 
-const rootNameSpace = "/"
-const genericErrorMessage = "error"
+const (
+	rootNameSpace       = "/"
+	genericErrorMessage = "error"
+)
 
 // API is a socket.io API implementation.
 type API struct {

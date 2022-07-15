@@ -3,9 +3,10 @@ package games
 
 import (
 	"errors"
+	"strings"
+
 	"planningpoker/internal/domain"
 	"planningpoker/internal/domain/events"
-	"strings"
 
 	"github.com/google/uuid"
 )

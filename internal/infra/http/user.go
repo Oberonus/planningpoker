@@ -2,6 +2,7 @@ package http
 
 import (
 	"errors"
+
 	"planningpoker/internal/domain/users"
 
 	"github.com/gin-gonic/gin"
