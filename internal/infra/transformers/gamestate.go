@@ -51,7 +51,7 @@ type GameStateResponse struct {
 }
 
 // NewGameStateResponse creates a new game state response.
-func NewGameStateResponse(player state.PlayerState, state state.GameState) GameStateResponse {
+func NewGameStateResponse(state state.GameState, player state.PlayerState) GameStateResponse {
 	resp := GameStateResponse{
 		Name:      state.Name,
 		TicketURL: state.TicketURL,

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"planningpoker/internal/domain/state"
+
 	"planningpoker/internal/infra/transformers"
 
 	"github.com/gin-gonic/gin"
@@ -15,8 +17,10 @@ import (
 	"planningpoker/internal/domain/games"
 )
 
-const rootNameSpace = "/"
-const genericErrorMessage = "error"
+const (
+	rootNameSpace       = "/"
+	genericErrorMessage = "error"
+)
 
 // API is a socket.io API implementation.
 type API struct {
@@ -85,12 +89,30 @@ func (p *API) SetupRoutes(r gin.IRoutes) {
 	r.POST("/socket.io/*any", gin.WrapH(p.server))
 }
 
-// SendToPlayer sends a message to a player of specific game.
-func (p *API) SendToPlayer(gameID, userID string, state transformers.GameStateResponse) error {
+// SendToPlayerOld sends a message to a player of specific game.
+func (p *API) SendToPlayerOld(gameID, userID string, state transformers.GameStateResponse) error {
 	ok := p.server.BroadcastToRoom(rootNameSpace, gameID+userID, "gameState", state)
 	if !ok {
 		return fmt.Errorf("broadcast to gameID=%s failed", gameID)
 	}
+
+	return nil
+}
+
+// SendToPlayer sends a message to a player of specific game.
+func (p *API) SendToPlayer(gameState state.GameState, userID string) error {
+	player, err := gameState.PlayerByID(userID)
+	if err != nil {
+		return err
+	}
+
+	personalState := transformers.NewGameStateResponse(gameState, *player)
+
+	ok := p.server.BroadcastToRoom(rootNameSpace, gameState.GameID+userID, "gameState", personalState)
+	if !ok {
+		return fmt.Errorf("broadcast to gameID=%s failed", gameState.GameID)
+	}
+
 	return nil
 }
 

@@ -2,11 +2,11 @@ package main
 
 import (
 	"log"
+	"planningpoker/internal/domain/state"
 
 	"github.com/sirupsen/logrus"
 
 	"planningpoker/internal/domain/games"
-	"planningpoker/internal/domain/state"
 	"planningpoker/internal/domain/users"
 	"planningpoker/internal/infra/async"
 	"planningpoker/internal/infra/auth"
@@ -36,11 +36,6 @@ func main() {
 		log.Fatalf("unable to create users service: %v", err)
 	}
 
-	stateService, err := state.NewService(gamesRepo, usersRepo)
-	if err != nil {
-		log.Fatalf("unable to create game state service: %v", err)
-	}
-
 	authenticator := auth.NewUserAuthenticator(usersService)
 
 	api, err := http.NewAPI(usersService, authenticator)
@@ -53,14 +48,15 @@ func main() {
 	r := gin.Default()
 	r.Use(gzip.Gzip(gzip.DefaultCompression))
 
-	socketIOPool := async.NewAPI(gamesService, authenticator)
+	asyncAPI := async.NewAPI(gamesService, authenticator)
 
-	if _, err := async.NewBroadcaster(stateService, socketIOPool, eventBus); err != nil {
-		log.Fatalf("unable to create a broadcaster")
+	_, err = state.NewService(gamesRepo, usersRepo, asyncAPI, eventBus)
+	if err != nil {
+		log.Fatalf("unable to create game state service: %v", err)
 	}
 
 	api.SetupRoutes(r)
-	socketIOPool.SetupRoutes(r)
+	asyncAPI.SetupRoutes(r)
 	fe.SetupRoutes(r)
 
 	if err := r.Run(); err != nil {

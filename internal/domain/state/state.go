@@ -2,6 +2,7 @@
 package state
 
 import (
+	"fmt"
 	"planningpoker/internal/domain/games"
 	"planningpoker/internal/domain/users"
 )
@@ -59,4 +60,14 @@ func findUserInListByID(id string, users []users.User) *users.User {
 		}
 	}
 	return nil
+}
+
+// PlayerByID returns a player state by user ID.
+func (s GameState) PlayerByID(userID string) (*PlayerState, error) {
+	for _, player := range s.Players {
+		if player.UserID == userID {
+			return &player, nil
+		}
+	}
+	return nil, fmt.Errorf("player with id=%v not found", userID)
 }

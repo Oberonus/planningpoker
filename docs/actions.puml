@@ -1,0 +1,49 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+participant Player
+participant SocketIO
+participant GamesService
+participant GamesRepository
+participant Database
+participant Aggregate
+participant EventBus
+
+Player -> SocketIO: Action
+activate SocketIO
+
+    SocketIO->GamesService: Action
+    activate GamesService
+
+        GamesService->GamesRepository: Get game aggregate\n and LOCK
+        activate GamesRepository
+            GamesRepository->Database: Fetch aggregate
+            activate Database
+                Database->GamesRepository: Aggregate DTO
+            deactivate Database
+            GamesRepository->GamesRepository: Build aggregate
+            GamesRepository->GamesService: Aggregate
+        deactivate GamesRepository
+
+        GamesService->Aggregate: Action
+        activate Aggregate
+            Aggregate->Aggregate: Perform action
+            Aggregate->Aggregate: Create domain event\n "Game updated"
+            Aggregate->GamesService: Completed
+        deactivate Aggregate
+
+        GamesService->GamesRepository: Persist
+        activate GamesRepository
+            GamesRepository->Database: Save
+            GamesRepository->EventBus: Publish domain events
+            GamesRepository->GamesService: OK
+        deactivate GamesRepository
+
+        GamesService->SocketIO: OK
+    deactivate GamesService
+
+    SocketIO->Player: OK
+
+deactivate SocketIO
+
+@enduml

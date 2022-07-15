@@ -2,12 +2,13 @@ package state_test
 
 import (
 	"errors"
+	"planningpoker/internal/domain/events"
+	"planningpoker/internal/domain/state"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"planningpoker/internal/domain/games"
-	"planningpoker/internal/domain/state"
 	"planningpoker/internal/domain/users"
 	"planningpoker/test"
 )
@@ -18,27 +19,47 @@ func TestNewService(t *testing.T) {
 	testCases := map[string]struct {
 		gameRepo  state.GameRepository
 		usersRepo state.UsersRepository
+		publisher state.Publisher
+		eventBus  events.EventBus
 		expError  string
 	}{
 		"success": {
 			gameRepo:  gamesRepoStub{},
 			usersRepo: usersRepoStub{},
+			publisher: publisherStub{},
+			eventBus:  eventBusStub{},
 			expError:  "",
+		},
+		"fail on no event bus": {
+			gameRepo:  gamesRepoStub{},
+			usersRepo: usersRepoStub{},
+			publisher: publisherStub{},
+			expError:  "event bus should be provided",
+		},
+		"fail on no publisher": {
+			gameRepo:  gamesRepoStub{},
+			usersRepo: usersRepoStub{},
+			eventBus:  eventBusStub{},
+			expError:  "publisher should be provided",
 		},
 		"fail on no game repo": {
 			usersRepo: usersRepoStub{},
+			publisher: publisherStub{},
+			eventBus:  eventBusStub{},
 			expError:  "games repository should be provided",
 		},
 		"fail on no user repo": {
-			gameRepo: gamesRepoStub{},
-			expError: "users repository should be provided",
+			gameRepo:  gamesRepoStub{},
+			publisher: publisherStub{},
+			eventBus:  eventBusStub{},
+			expError:  "users repository should be provided",
 		},
 	}
 	for name, tt := range testCases {
 		tt := tt
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			srv, err := state.NewService(tt.gameRepo, tt.usersRepo)
+			srv, err := state.NewService(tt.gameRepo, tt.usersRepo, tt.publisher, tt.eventBus)
 
 			if tt.expError != "" {
 				assert.EqualError(t, err, tt.expError)
@@ -55,9 +76,11 @@ func TestGamesService_GameState(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
-		gameRepo state.GameRepository
-		userRepo state.UsersRepository
-		expError string
+		gameRepo  state.GameRepository
+		userRepo  state.UsersRepository
+		eventBus  events.EventBus
+		publisher state.Publisher
+		expError  string
 	}{
 		"success": {
 			gameRepo: gamesRepoStub{game: newTestServiceGame(t).UserJoins(test.User1).Instance()},
@@ -83,7 +106,7 @@ func TestGamesService_GameState(t *testing.T) {
 		tt := tt
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			srv, err := state.NewService(tt.gameRepo, tt.userRepo)
+			srv, err := state.NewService(tt.gameRepo, tt.userRepo, publisherStub{}, eventBusStub{})
 			require.NoError(t, err)
 
 			st, err := srv.GameState("anything")
@@ -120,4 +143,21 @@ func (u usersRepoStub) GetMany([]string) ([]users.User, error) {
 
 func newTestServiceGame(t *testing.T) *test.Game {
 	return test.NewTestGame(t, test.NewSimpleGame(t, true))
+}
+
+type publisherStub struct {
+	err error
+}
+
+func (p publisherStub) SendToPlayer(gameState state.GameState, userID string) error {
+	return p.err
+}
+
+type eventBusStub struct{}
+
+func (e eventBusStub) Publish(event events.DomainEvent) error {
+	return nil
+}
+
+func (e eventBusStub) Subscribe(consumer events.Consumer, eventTypes ...string) {
 }

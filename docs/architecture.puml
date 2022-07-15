@@ -5,25 +5,25 @@ package "Domain" {
     rectangle "Domain Services" as domain_services
 }
 
-queue "Event Bus" as event_bus
-rectangle "Repositories" as repositories
 database "Database" as db
 
-rectangle "API adapters" {
-    rectangle "Async API\nsocket.io" as async
-    rectangle "Sync API\nHTTP" as http
+rectangle "Infra" {
+    rectangle Web {
+        rectangle "Async API\nsocket.io" as async
+        rectangle "Sync API\nHTTP" as http
+    }
+    rectangle "Repositories" as repositories
+    queue "Event Bus" as event_bus
 }
 
-domain_services -u-> aggregates
-domain_services ..> event_bus
-event_bus -> domain_services
+domain_services --> aggregates
+event_bus ---> domain_services
 
-domain_services ..> repositories
+domain_services -u--> repositories
 
-domain_services ..> async
-async --> domain_services
+domain_services <-> async
 
-repositories ..> db
+repositories --> db
 
 repositories -> event_bus
 
@@ -32,11 +32,11 @@ http->domain_services
 
 actor "Player" as player
 
-async <--- player
-http <--- player
+player <--> async
+player --> http
 
 rectangle "Frontend assets" as assets
 
-http -u-> assets
+http --> assets
 
 @enduml
