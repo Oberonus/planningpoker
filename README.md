@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/Oberonus/planningpoker/branch/master/graph/badge.svg?token=USXNP5KBW0)](https://codecov.io/gh/Oberonus/planningpoker)
+
 # Planning Poker
 
 ## What is it?
