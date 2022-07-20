@@ -6,15 +6,14 @@ import (
 	"fmt"
 	"log"
 	"net/url"
-	"planningpoker/internal/domain/state"
-
-	"planningpoker/internal/infra/transformers"
 
 	"github.com/gin-gonic/gin"
 	socketio "github.com/googollee/go-socket.io"
 	"github.com/sirupsen/logrus"
 
 	"planningpoker/internal/domain/games"
+	"planningpoker/internal/domain/state"
+	"planningpoker/internal/infra/transformers"
 )
 
 const (
@@ -87,16 +86,6 @@ func NewAPI(repository gameService, authenticator userAuthenticator) *API {
 func (p *API) SetupRoutes(r gin.IRoutes) {
 	r.GET("/socket.io/*any", gin.WrapH(p.server))
 	r.POST("/socket.io/*any", gin.WrapH(p.server))
-}
-
-// SendToPlayerOld sends a message to a player of specific game.
-func (p *API) SendToPlayerOld(gameID, userID string, state transformers.GameStateResponse) error {
-	ok := p.server.BroadcastToRoom(rootNameSpace, gameID+userID, "gameState", state)
-	if !ok {
-		return fmt.Errorf("broadcast to gameID=%s failed", gameID)
-	}
-
-	return nil
 }
 
 // SendToPlayer sends a message to a player of specific game.

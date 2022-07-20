@@ -10,7 +10,7 @@ import (
 
 // UserAuthenticator is a contract to authenticate users.
 type userAuthenticator interface {
-	// AuthenticateByToken returns a user ID or error is user is not authenticated
+	// AuthenticateByToken returns a user ID or error if user is not authenticated
 	AuthenticateByToken(token string) (string, error)
 }
 

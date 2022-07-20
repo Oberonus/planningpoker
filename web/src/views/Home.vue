@@ -41,14 +41,14 @@ export default {
       }
       await user.authenticate()
 
-      const [result, gameName, gameURL] = await this.$refs.newGameDialog.open()
+      const [result, gameName, gameURL, deck] = await this.$refs.newGameDialog.open()
       if (!result) {
         return
       }
 
       this.$router.push({
         name: 'Games',
-        params: {id: await game.create(gameName, gameURL)},
+        params: {id: await game.create(gameName, gameURL, deck)},
       })
     }
   }

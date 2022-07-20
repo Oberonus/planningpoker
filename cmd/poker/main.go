@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+
 	"planningpoker/internal/domain/state"
 
 	"github.com/sirupsen/logrus"
