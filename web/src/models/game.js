@@ -1,16 +1,18 @@
 import notifier from "@/notifier/notifier";
 
-const cardsDeck = {
-    name: "T-Shirt",
-    types: ["XXS", "XS", "S", "M", "L", "XL", "XXL", "?"]
-}
-
 export default {
-    create(name, url) {
+    decks: [
+        {name: "T-Shirt", types: ["XXS", "XS", "S", "M", "L", "XL", "XXL", "?"]},
+        {name: "Fibonacci", types: ["0", "1", "2", "3", "5", "8", "13", "21", "34", "55", "89", "?"]},
+        {name: "Custom fibonacci", types: ["0", "½", "1", "2", "3", "5", "8", "13", "20", "40", "100", "?"]},
+        {name: "Powers of 2", types: ["0", "1", "2", "4", "8", "16", "32", "64", "?"]},
+    ],
+
+    create(name, url, deck) {
         const ob = {
             name: name,
             url: url,
-            cards_deck: cardsDeck,
+            cards_deck: deck,
             everyone_can_reveal: true,
         }
 

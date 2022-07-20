@@ -2,9 +2,10 @@ package state_test
 
 import (
 	"errors"
+	"testing"
+
 	"planningpoker/internal/domain/events"
 	"planningpoker/internal/domain/state"
-	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

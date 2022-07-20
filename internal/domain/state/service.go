@@ -3,6 +3,7 @@ package state
 import (
 	"errors"
 	"fmt"
+
 	"github.com/sirupsen/logrus"
 	"planningpoker/internal/domain/events"
 )
