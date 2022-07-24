@@ -53,12 +53,12 @@ func TestWorkflow(t *testing.T) {
 	err = gamesService.Join(*joinCmd)
 	require.NoError(t, err)
 
-	voteCmd, err := games.NewVoteCommand(gameID, user1.ID(), "XS")
+	voteCmd, err := games.NewVoteCommand(gameID, user1.ID(), "XS", games.ConfidenceNormal)
 	require.NoError(t, err)
 	err = gamesService.Vote(*voteCmd)
 	require.NoError(t, err)
 
-	voteCmd, err = games.NewVoteCommand(gameID, user2.ID(), "?")
+	voteCmd, err = games.NewVoteCommand(gameID, user2.ID(), "?", games.ConfidenceNormal)
 	require.NoError(t, err)
 	err = gamesService.Vote(*voteCmd)
 	require.NoError(t, err)

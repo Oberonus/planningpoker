@@ -38,9 +38,10 @@ func (d cardsDeckDTO) toDomain() (*games.CardsDeck, error) {
 }
 
 type playerDTO struct {
-	VotedCard string `json:"voted_card"`
-	CanReveal bool   `json:"can_reveal"`
-	Active    bool   `json:"active"`
+	VotedCard  string `json:"voted_card"`
+	CanReveal  bool   `json:"can_reveal"`
+	Confidence string `json:"confidence"`
+	Active     bool   `json:"active"`
 }
 
 func (d playerDTO) toDomain() (*games.Player, error) {
@@ -55,9 +56,10 @@ func (d playerDTO) toDomain() (*games.Player, error) {
 	}
 
 	return &games.Player{
-		VotedCard: votedCard,
-		CanReveal: d.CanReveal,
-		Active:    d.Active,
+		VotedCard:  votedCard,
+		CanReveal:  d.CanReveal,
+		Confidence: d.Confidence,
+		Active:     d.Active,
 	}, nil
 }
 

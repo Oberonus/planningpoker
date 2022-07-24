@@ -46,7 +46,7 @@
 
     <v-row align="center" justify="center" v-if="state">
       <card-on-table v-for="player in state.getPlayers()" v-bind:key="player.name" :name="player.name"
-                     :card="player.voted_card"></card-on-table>
+                     :card="player.voted_card" :confidence="player.confidence"></card-on-table>
     </v-row>
 
     <v-row align="center" justify="center" v-if="state" style="min-height: 100px;">
@@ -55,18 +55,31 @@
       <div v-if="state.isRunning() && !state.canReveal()">Please pick your cards</div>
     </v-row>
 
-    <v-row align="center" justify="center" v-if="state" v-show="state.isRunning()" style="min-height: 100px;">
-      <Card v-for="card in state.getCards()"
-            v-bind:key="card"
-            @click="state.vote(card)"
-            :active="state.isActive(card)"
-            :value="card">
-      </Card>
-    </v-row>
+    <v-container v-if="state" v-show="state.isRunning()" style="height: 200px;">
+      <v-row align="center" justify="center" style="min-height: 100px;">
+          <Card v-for="card in state.getCards()"
+                v-bind:key="card"
+                @click="state.vote(card)"
+                :active="state.isActive(card)"
+                :value="card"
+                :confidence="state.confidence">
+          </Card>
+      </v-row>
+      <v-row v-if="state.voted() && state.confidence" align="center" justify="center" style="min-height: 50px; margin-top: 30px;">
+        <v-btn-toggle @change="(val)=>state.changeConfidence(val)" v-model="state.confidence" tile group mandatory>
+          <v-btn value="low">Not sure</v-btn>
+          <v-btn value="normal">Default</v-btn>
+          <v-btn value="high">Very confident</v-btn>
+        </v-btn-toggle>
+      </v-row>
+    </v-container>
 
-    <v-row align="center" justify="center" v-if="state" v-show="state.isFinished()" style="min-height: 100px;">
-      <h1>Voting finished</h1>
-    </v-row>
+    <v-container v-if="state" v-show="state.isFinished()" style="height: 200px;">
+      <v-row align="center" justify="center">
+        <h1>Voting finished</h1>
+      </v-row>
+    </v-container>
+
     <UserNameDialog ref="userNameDialog"></UserNameDialog>
     <GameSettingsDialog ref="gameSettingsDialog"></GameSettingsDialog>
     <InviteDialog ref="inviteDialog"></InviteDialog>

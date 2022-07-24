@@ -8,8 +8,9 @@ import (
 
 // PlayerStateResponse is a response payload for a player.
 type PlayerStateResponse struct {
-	Name      string `json:"name"`
-	VotedCard string `json:"voted_card"`
+	Name       string `json:"name"`
+	VotedCard  string `json:"voted_card"`
+	Confidence string `json:"confidence"`
 }
 
 func newPlayerStateResponse(gState state.GameState, pState state.PlayerState) PlayerStateResponse {
@@ -21,6 +22,7 @@ func newPlayerStateResponse(gState state.GameState, pState state.PlayerState) Pl
 			resp.VotedCard = games.NewUnrevealedCard().Type()
 		} else {
 			resp.VotedCard = pState.VotedCard.Type()
+			resp.Confidence = pState.Confidence
 		}
 	}
 	return resp
@@ -41,13 +43,14 @@ func newCardsDeckResponse(cd games.CardsDeck) cardsDeckResponse {
 
 // GameStateResponse is a response payload with game state.
 type GameStateResponse struct {
-	Name      string                `json:"name"`
-	TicketURL string                `json:"ticket_url"`
-	CardsDeck cardsDeckResponse     `json:"cards_deck"`
-	Players   []PlayerStateResponse `json:"players"`
-	State     string                `json:"state"`
-	VotedCard string                `json:"voted_card"`
-	CanReveal bool                  `json:"can_reveal"`
+	Name       string                `json:"name"`
+	TicketURL  string                `json:"ticket_url"`
+	CardsDeck  cardsDeckResponse     `json:"cards_deck"`
+	Players    []PlayerStateResponse `json:"players"`
+	State      string                `json:"state"`
+	VotedCard  string                `json:"voted_card"`
+	Confidence string                `json:"confidence"`
+	CanReveal  bool                  `json:"can_reveal"`
 }
 
 // NewGameStateResponse creates a new game state response.
@@ -61,6 +64,7 @@ func NewGameStateResponse(state state.GameState, player state.PlayerState) GameS
 	}
 	if player.VotedCard != nil {
 		resp.VotedCard = player.VotedCard.Type()
+		resp.Confidence = player.Confidence
 	}
 	for _, p := range state.Players {
 		resp.Players = append(resp.Players, newPlayerStateResponse(state, p))

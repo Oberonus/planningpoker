@@ -70,9 +70,10 @@ func (r *MemoryGameRepository) Save(game *games.Game) error {
 			votedCard = p.VotedCard.Type()
 		}
 		dto.Players[id] = playerDTO{
-			VotedCard: votedCard,
-			CanReveal: p.CanReveal,
-			Active:    p.Active,
+			VotedCard:  votedCard,
+			CanReveal:  p.CanReveal,
+			Active:     p.Active,
+			Confidence: p.Confidence,
 		}
 	}
 

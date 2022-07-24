@@ -59,7 +59,7 @@ func (g *Game) UserJoins(uid string) *Game {
 func (g *Game) UserVotes(uid, cardName string) *Game {
 	card, err := games.NewCard(cardName)
 	require.NoError(g.t, err)
-	cmd, err := games.NewVoteCommand(g.game.ID(), uid, *card)
+	cmd, err := games.NewVoteCommand(g.game.ID(), uid, *card, games.ConfidenceNormal)
 	require.NoError(g.t, err)
 	g.lastError = g.game.Vote(*cmd)
 	return g

@@ -16,6 +16,8 @@ const (
 	GameStateStarted = "started"
 	// GameStateFinished represents finished game state.
 	GameStateFinished = "finished"
+	// ConfidenceNormal represents default confidence level.
+	ConfidenceNormal = "normal"
 )
 
 // Game is a domain aggregate that represents one single game.
@@ -32,9 +34,10 @@ type Game struct {
 
 // Player is an entity of a game player with state.
 type Player struct {
-	VotedCard *Card
-	CanReveal bool
-	Active    bool
+	VotedCard  *Card
+	Confidence string
+	CanReveal  bool
+	Active     bool
 }
 
 // NewGame creates a new game aggregate instance.
@@ -192,6 +195,7 @@ func (g *Game) Vote(cmd VoteCommand) error {
 	}
 
 	g.players[cmd.UserID].VotedCard = &cmd.Vote
+	g.players[cmd.UserID].Confidence = cmd.Confidence
 
 	g.setChanged()
 
@@ -227,6 +231,7 @@ func (g *Game) UnVote(cmd UnVoteCommand) error {
 	}
 
 	g.players[cmd.UserID].VotedCard = nil
+	g.players[cmd.UserID].Confidence = ConfidenceNormal
 
 	g.setChanged()
 
