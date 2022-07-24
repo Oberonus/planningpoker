@@ -13,6 +13,7 @@ export default class {
     players;
     voted_card;
     can_reveal;
+    confidence;
 
     constructor(id) {
         this.id = id
@@ -50,6 +51,10 @@ export default class {
         return this.voted_card === card
     }
 
+    voted() {
+        return this.voted_card !== ""
+    }
+
     async reveal() {
         await game.reveal(this.id)
     }
@@ -65,8 +70,16 @@ export default class {
         } else {
             card = encodeURIComponent(card)
             this.voted_card = card
-            await game.vote(this.id, card)
+            this.confidence = "normal"
+            await game.vote(this.id, card, this.confidence)
         }
+    }
+
+    async changeConfidence(confidence) {
+        if (!this.voted_card || this.voted_card === "") {
+            return
+        }
+        await game.vote(this.id, this.voted_card, confidence)
     }
 
     stopUpdates() {

@@ -54,17 +54,19 @@ func NewJoinGameCommand(gameID, userID string) (*JoinGameCommand, error) {
 
 // VoteCommand is a user voting command.
 type VoteCommand struct {
-	GameID string
-	UserID string
-	Vote   Card
+	GameID     string
+	UserID     string
+	Vote       Card
+	Confidence string
 }
 
 // NewVoteCommand creates a new command instance.
-func NewVoteCommand(gameID, userID string, card Card) (*VoteCommand, error) {
+func NewVoteCommand(gameID, userID string, card Card, confidence string) (*VoteCommand, error) {
 	return &VoteCommand{
-		GameID: gameID,
-		UserID: userID,
-		Vote:   card,
+		GameID:     gameID,
+		UserID:     userID,
+		Vote:       card,
+		Confidence: confidence,
 	}, nil
 }
 

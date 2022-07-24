@@ -193,7 +193,7 @@ func TestGamesService_Vote(t *testing.T) {
 			srv, err := games.NewService(tt.gameRepo, eventBusStub{})
 			require.NoError(t, err)
 
-			cmd, err := games.NewVoteCommand("anything", test.User1, *card)
+			cmd, err := games.NewVoteCommand("anything", test.User1, *card, games.ConfidenceNormal)
 			require.NoError(t, err)
 
 			err = srv.Vote(*cmd)

@@ -34,8 +34,11 @@ export default {
         notifier.socket.emit("leave")
     },
 
-    async vote(gameID, vote) {
-        notifier.socket.emit("vote", vote)
+    async vote(gameID, vote, confidence) {
+        notifier.socket.emit("vote", {
+            vote: vote,
+            confidence: confidence,
+        })
     },
 
     async reveal() {

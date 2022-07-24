@@ -10,10 +10,11 @@ import (
 
 // PlayerState represents a player state.
 type PlayerState struct {
-	UserID    string
-	Name      string
-	VotedCard *games.Card
-	CanReveal bool
+	UserID     string
+	Name       string
+	VotedCard  *games.Card
+	Confidence string
+	CanReveal  bool
 }
 
 // GameState represents a game state.
@@ -44,10 +45,11 @@ func NewStateForGame(game games.Game, gamers []users.User) GameState {
 		}
 
 		state.Players = append(state.Players, PlayerState{
-			UserID:    uid,
-			Name:      userName,
-			VotedCard: p.VotedCard,
-			CanReveal: p.CanReveal,
+			UserID:     uid,
+			Name:       userName,
+			VotedCard:  p.VotedCard,
+			Confidence: p.Confidence,
+			CanReveal:  p.CanReveal,
 		})
 	}
 

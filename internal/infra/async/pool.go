@@ -224,14 +224,19 @@ func (p *API) leave(conn socketio.Conn) string {
 	return "ok"
 }
 
-func (p *API) vote(conn socketio.Conn, vote string) string {
+type votePayload struct {
+	Vote       string `json:"vote"`
+	Confidence string `json:"confidence"`
+}
+
+func (p *API) vote(conn socketio.Conn, payload votePayload) string {
 	cc, ok := conn.Context().(conContext)
 	if !ok {
 		logrus.Errorf("socket game: unable to get the context")
 		return genericErrorMessage
 	}
 
-	vote, err := url.QueryUnescape(vote)
+	vote, err := url.QueryUnescape(payload.Vote)
 	if err != nil {
 		logrus.Errorf("socket leave game: failed to unescape vote: %v", err)
 		return genericErrorMessage
@@ -243,7 +248,7 @@ func (p *API) vote(conn socketio.Conn, vote string) string {
 		return genericErrorMessage
 	}
 
-	cmd, err := games.NewVoteCommand(cc.gameID, cc.userID, *card)
+	cmd, err := games.NewVoteCommand(cc.gameID, cc.userID, *card, payload.Confidence)
 	if err != nil {
 		logrus.Errorf("vote: %v", err)
 		return genericErrorMessage
