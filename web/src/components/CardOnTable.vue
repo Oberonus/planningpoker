@@ -49,8 +49,8 @@ export default {
   left: 0
   width: 100%
   height: 25px
-  border-top-left-radius .8rem
-  border-top-right-radius .8rem
+  border-top-left-radius .5rem
+  border-top-right-radius .5rem
   background #13C29A
   color white
   text-align center
@@ -83,15 +83,16 @@ export default {
 
 .tcard-body
   font-size 19px
-  width: 4rem;
-  height: 7rem;
-  border-radius: .8rem;
-  border: 2px solid #23D2AA;
+  width: 4rem
+  height: 7rem
+  border-radius: .8rem
+  border: 2px solid #23D2AA
   white-space nowrap
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  display: flex
+  justify-content: center
+  align-items: center
   font-weight bold
+  position relative
 
 .tcard-name
   font-size: 1rem;
