@@ -2,3 +2,4 @@ coverage.txt
 .magefile
 .cache
 .docker
+.kamal/secrets*

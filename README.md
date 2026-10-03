@@ -24,6 +24,51 @@ docker-compose up
 
 When the container is up and running, just visit the service at [http://localhost:8080](http://localhost:8080)
 
+## Deploy with Kamal
+
+Production runs at https://poker.deminworks.com on the `deminworks` VPS.
+The configuration is in `config/deploy.yml` and uses SSH as `alex` over Tailscale.
+Docker must be available to `alex` without sudo. On a new server, Kamal can
+install Docker automatically when run with root SSH access; otherwise install
+Docker and add `alex` to the `docker` group first, then reconnect.
+
+Install Kamal globally with Ruby 3.2 or newer:
+
+```bash
+gem install kamal --version 2.12.0 --no-document
+# If using rbenv:
+rbenv rehash
+```
+
+The `poker.deminworks.com` DNS record must point to `185.207.104.218`, with
+ports 80 and 443 reachable. For the simplest Let's Encrypt setup, use Cloudflare
+DNS-only mode. If enabling Cloudflare proxying afterward, use Full (strict)
+SSL/TLS mode and keep WebSockets enabled.
+
+Run the first deployment from this directory while connected to Tailscale,
+with a local Docker engine running:
+
+```bash
+kamal setup
+```
+
+For subsequent deployments and operations:
+
+```bash
+kamal deploy
+kamal app details
+kamal app logs
+kamal rollback <previous-version>
+```
+
+Kamal builds the committed Git revision for amd64. Commit deployment and
+application changes before running `kamal deploy`.
+It runs a local registry on port 5555 and transfers images through SSH tunnels,
+so external registry credentials are unnecessary. The proxy serves HTTPS and
+checks `/alive` on application port 8080 before switching traffic.
+
+Games and users are stored in memory; restarting or deploying resets them.
+
 ## Development
 
 This service is built with Domain Driven Design, CQRS, event based communication, clean code and

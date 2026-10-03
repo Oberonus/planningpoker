@@ -1,0 +1,40 @@
+service: planningpoker
+image: planningpoker
+minimum_version: 2.12.0
+
+servers:
+  web:
+    - deminworks
+
+ssh:
+  user: alex
+
+proxy:
+  host: poker.deminworks.com
+  ssl: true
+  app_port: 8080
+  healthcheck:
+    path: /alive
+    interval: 3
+    timeout: 5
+
+# Kamal runs a local registry and tunnels image transfers over SSH.
+# No external registry account or registry credentials are needed.
+registry:
+  server: localhost:5555
+
+builder:
+  arch: amd64
+
+env:
+  clear:
+    GIN_MODE: release
+    PORT: 8080
+
+deploy_timeout: 60
+
+logging:
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "3"

@@ -1,28 +1,27 @@
-FROM golang:1.15 as builder
-
-# install nodejs
-RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -
-RUN apt-get update -y && apt-get install -y nodejs
-
-# Build frontend part
+FROM node:22-alpine AS frontend
 WORKDIR /web
-COPY web/*.json ./
-COPY web/*.js ./
+COPY web/package.json web/package-lock.json ./
+RUN npm ci --legacy-peer-deps
+COPY web/babel.config.js web/vue.config.js ./
 COPY web/public ./public
 COPY web/src ./src
-RUN npm install
-RUN npm run build
+# Vue CLI 4 uses Webpack 4, which requires the legacy OpenSSL provider.
+RUN NODE_OPTIONS=--openssl-legacy-provider npm run build
 
-# Build backend part
+FROM golang:1.26-alpine AS backend
 WORKDIR /app
+COPY go.mod go.sum ./
+COPY vendor ./vendor
 COPY cmd ./cmd
 COPY internal ./internal
-COPY vendor ./vendor
-COPY go.mod ./
-COPY go.sum ./
-RUN CGO_ENABLED=0 go build -mod=vendor -o poker ./cmd/poker/main.go
+RUN CGO_ENABLED=0 go build -mod=vendor -trimpath -ldflags="-s -w" -o /poker ./cmd/poker
 
-FROM alpine:3.11
-COPY --from=builder /web/dist web/dist
-COPY --from=builder /app/poker .
+FROM alpine:3.23
+RUN apk add --no-cache ca-certificates && adduser -D -u 10001 poker
+WORKDIR /app
+COPY --from=frontend /web/dist ./web/dist
+COPY --from=backend /poker ./poker
+ENV GIN_MODE=release PORT=8080
+USER poker
+EXPOSE 8080
 CMD ["./poker"]

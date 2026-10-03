@@ -1,0 +1,14 @@
+.git
+.github
+.idea
+.cache
+.magefile
+.docker
+.bundle
+.kamal
+vendor/bundle
+web/node_modules
+web/dist
+coverage.txt
+*.log
+.env*
