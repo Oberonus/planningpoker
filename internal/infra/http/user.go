@@ -27,7 +27,7 @@ func (h *API) register(c *gin.Context) {
 
 	user, err := h.usersService.Register(*cmd)
 	if err != nil {
-		badRequestError(c, err)
+		internalError(c, err)
 		return
 	}
 
@@ -38,8 +38,8 @@ func (h *API) register(c *gin.Context) {
 
 func (h *API) currentUser(c *gin.Context, userID string) {
 	user, err := h.usersService.Get(userID)
-	if err != nil || user == nil {
-		badRequestError(c, err)
+	if err != nil {
+		internalError(c, err)
 		return
 	}
 

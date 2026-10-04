@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 type httpErr struct {
@@ -21,8 +22,10 @@ func badRequestError(c *gin.Context, err error) {
 }
 
 func internalError(c *gin.Context, err error) {
+	logrus.Errorf("HTTP request failed: %v", err)
+
 	c.JSON(http.StatusInternalServerError, httpErr{
-		Error: err.Error(),
+		Error: "internal server error",
 	})
 }
 

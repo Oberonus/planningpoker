@@ -27,6 +27,16 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.23.x'
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install test client and test frontend models
+        run: |
+          npm --prefix web ci --legacy-peer-deps
+          npm --prefix web test
       - name: Provision application database
         env:
           POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
@@ -41,7 +51,8 @@ jobs:
       - name: Vet and test with PostgreSQL
         run: |
           go vet -mod=vendor ./...
-          go test -mod=vendor -race -tags=integration -coverprofile=coverage.txt -covermode=atomic ./...
+          go test -mod=vendor -race -tags=integration -coverpkg=./cmd/...,./internal/... -coverprofile=coverage-unit.txt -covermode=atomic ./...
+          go test -mod=vendor -race -tags=component -coverpkg=./cmd/...,./internal/... -coverprofile=coverage-component.txt -covermode=atomic ./test/component
       - name: Build and smoke test application container
         run: |
           docker build -t planningpoker:test .
@@ -51,7 +62,10 @@ jobs:
             sleep 1
           done
           go test -mod=vendor -tags=component ./test
+          POKER_TEST_URL=http://127.0.0.1:8080 node --test web/tests/component/service.test.js
       - name: Update coverage
         uses: codecov/codecov-action@v2
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage-unit.txt,./coverage-component.txt
+          fail_ci_if_error: true

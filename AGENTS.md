@@ -4,6 +4,63 @@ These instructions apply to all work in this repository. Read them before editin
 code. Deliver changes that already follow these conventions; formatting and a
 review of the diff are part of the work, not follow-up tasks for the user.
 
+## Commits and branches
+
+Every new commit must follow
+[Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/).
+Apply these rules whenever creating a branch, commit, PR title, or squash commit.
+
+Use this shared set of lowercase types:
+
+| Type | Purpose |
+| --- | --- |
+| `feat` | New user-facing functionality |
+| `fix` | Correcting a bug |
+| `docs` | Documentation changes |
+| `refactor` | Restructuring code without changing behavior |
+| `test` | Adding or improving tests |
+| `perf` | Improving performance |
+| `style` | Formatting changes without changing behavior |
+| `build` | Dependencies, build tooling, or image construction |
+| `ci` | Continuous integration workflows |
+| `chore` | Maintenance that does not fit another type |
+| `revert` | Reverting an earlier change |
+
+### Commit messages
+
+- Format the subject as `<type>[optional scope][!]: <description>`, for example
+  `feat(games): add confidence voting` or `fix(http): handle missing users`.
+- Use a short lowercase scope naming the affected area when it adds clarity,
+  such as `games`, `users`, `http`, `repository`, or `web`. Omit it for changes
+  spanning several areas. Use the same scope for the same area across commits.
+- Write the description in imperative form, starting with a lowercase word,
+  without a trailing period. Keep the complete subject at most 72 characters.
+- Keep each commit focused on one coherent change. Choose its type from the
+  actual change, rather than copying the branch prefix automatically.
+- For breaking changes, add `!` immediately before `:` and include a
+  `BREAKING CHANGE: <description>` footer explaining the required migration.
+  Separate optional bodies and footers from the subject with blank lines.
+- PR titles and squash commit subjects follow the same rules. When merging,
+  use squash or rebase so the resulting commits retain conventional messages.
+  Revert messages must also use the `revert:` format; reference the reverted
+  commit in the body or footer.
+
+### Branch names
+
+- Name every new work branch `<type>-<short-description>`, using a type from
+  the table above that describes the branch's primary purpose.
+- Use lowercase words and digits separated by single hyphens. Do not use
+  slashes, underscores, spaces, personal prefixes, or a trailing hyphen.
+- Keep the description short and specific, for example `feat-confidence-voting`,
+  `fix-missing-user`, `test-service-components`, or `docs-git-conventions`.
+- The permanent default branch (`master`) is exempt. These rules apply to new
+  work; do not rename existing branches or rewrite historical commits merely
+  to adopt the convention.
+
+Before creating a branch or commit, check its name or subject against these
+rules. Before opening or merging a PR, check its title and resulting commit
+message as well.
+
 ## Readability
 
 - Separate logical steps with blank lines: setup, loading data, validation,
