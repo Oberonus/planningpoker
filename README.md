@@ -14,61 +14,62 @@ them aloud. The cards are revealed, and the estimates are then discussed. By hid
 in this way, the group can avoid the cognitive bias of anchoring, where the first number spoken 
 aloud sets a precedent for subsequent estimates.
 
-## How to run
+## Try it out
+
+Try Planning Poker at [poker.deminworks.com](https://poker.deminworks.com).
+Create a game and share the invitation link with your team.
+
+## Run locally
 
 The service is fully dockerized. Compose runs the app and PostgreSQL locally:
+
 ```bash
-docker-compose up
+docker compose up --build
 ```
 
 When the container is up and running, just visit the service at [http://localhost:8080](http://localhost:8080)
 
-## Deploy with Kamal
+## Deploy on your infrastructure
 
-The live application is at https://poker.deminworks.com.
-Deployments run from an operator's computer using `./bin/deploy`; GitHub Actions
-only runs verification. The tracked Kamal configuration reads deployment details
-from environment variables, so production addresses and resource names stay local.
+You can host Planning Poker on your own server using [Kamal](https://kamal-deploy.org/)
+and the included configuration. The defaults target a single amd64 server, serve
+HTTPS, and run PostgreSQL on the same host. Adapt the configuration to suit your
+infrastructure.
 
-The deployment SSH user needs Docker access without sudo. On a new server, Kamal
-can install Docker when run with root SSH access; otherwise install Docker and
-add the deployment user to the `docker` group first, then reconnect.
+You will need:
 
-Install Kamal globally with Ruby 3.2 or newer:
+- Ruby 3.2 or newer and Docker on the computer you deploy from.
+- A server reachable over SSH, with Docker available to your SSH user without sudo.
+- A domain pointing to your server's public IP, with ports 80 and 443 reachable.
+
+Install the supported Kamal version and copy the example deployment settings:
 
 ```bash
 gem install kamal --version 2.12.0 --no-document
-# If using rbenv:
-rbenv rehash
-```
-
-Create the local deployment settings:
-
-```bash
 cp config/deploy.env.example .env.deploy
 chmod 600 .env.deploy
 ```
 
-Edit `.env.deploy` with your SSH host/user, application domain, and shared database
-resource names. The wrapper loads this ignored file from the project root and
-exports its values before running Kamal. It is sourced as shell code, so keep it
-under your control and quote values as needed. If the file is absent, the same
-variables can be supplied through the exported environment.
+Edit `.env.deploy` with your SSH host/user, application domain, and names for the
+PostgreSQL service, container, and data volume. See
+[the example settings](config/deploy.env.example) for the required variables.
+For an existing database, keep its resource names unchanged so the configuration
+continues to use the same data volume.
 
-For an existing database, preserve its service, container, and volume names.
-Changing them can select a different container or empty volume. Keep private
-operator notes in `.kamal/operations.md`, which is also ignored, and back up the
-local configuration and secrets privately.
+The local `./bin/deploy` wrapper loads `.env.deploy` from the project root and
+exports its values for Kamal. The file is sourced as shell code; quote values
+as needed. If it is absent, supply the same variables in your exported environment.
+Deployment settings and secret files are ignored by Git; back them up privately.
 
-Point the application domain at your server's public IP, with ports 80 and 443
-reachable. Keep the exact DNS and SSH details in your private operator notes.
+Follow the [PostgreSQL setup guide](docs/postgres.md#provision-your-database)
+to start the database and create the application's login and local secret files.
+The supplied [database configuration](config/database.yml) manages PostgreSQL
+separately from the app, so replacing the app does not replace its database.
+You can also use a separately managed PostgreSQL instance by configuring
+`DATABASE_URL` for it instead.
 
-Before the first deployment with PostgreSQL, follow the
-[database setup guide](docs/postgres.md#initial-production-setup) to boot the shared
-Kamal accessory, provision the app's database/login, and configure local secrets.
-
-Run the first deployment from this directory while connected to Tailscale,
-with a local Docker engine running:
+From the project root, with Docker running and SSH access to your server, set up
+the first application deployment:
 
 ```bash
 ./bin/deploy setup
@@ -83,17 +84,14 @@ For subsequent deployments and operations:
 ./bin/deploy rollback <previous-version>
 ```
 
-Kamal builds the committed Git revision for amd64. Commit deployment and
-application changes before running `./bin/deploy`.
-It runs a local registry on port 5555 and transfers images through SSH tunnels,
-so external registry credentials are unnecessary. The proxy serves HTTPS and
-checks `/alive` on application port 8080 before switching traffic.
+Kamal builds the committed Git revision, so commit your application and
+configuration changes before deploying. The supplied
+[application configuration](config/deploy.yml) uses a local registry with image
+transfer through SSH and checks `/alive` before switching traffic. Adjust the
+build architecture and database resource limits for your server as needed.
 
-Games and users are persisted in PostgreSQL. The app requires `DATABASE_URL` and
-applies its schema migrations at startup. PostgreSQL is managed separately by
-Kamal through `config/database.yml`, so other services can share the database
-server with separate databases and credentials. Follow the
-[PostgreSQL setup and operations guide](docs/postgres.md) before the first deploy.
+For database administration, backups, and local integration tests, see the
+[PostgreSQL guide](docs/postgres.md).
 
 ## Development
 

@@ -1,25 +1,26 @@
-# PostgreSQL storage and operations
+# PostgreSQL for self-hosting
 
 Planning Poker stores game aggregates as JSONB documents and user identities in
 ordinary columns. It requires `DATABASE_URL` at startup and fails if PostgreSQL
 is unavailable. Schema migrations are embedded in the binary and applied in a
 transaction under a database advisory lock, so simultaneous starts are safe.
-The application login owns only the `planningpoker` database and can migrate its
-own tables; it is not a PostgreSQL administrator.
+Provision a dedicated database and login for the application. That login can
+migrate its own tables and does not need PostgreSQL administrator privileges.
 
 Game updates use `SELECT ... FOR UPDATE` through commit. This prevents lost votes
 across independent connections. Events are published after commit using the
 existing in-process bus. `/alive` checks database connectivity before returning
 200, allowing Kamal to check readiness before moving traffic.
 
-The current event bus and WebSocket connections still live in one process. This
-change provides persistence and safe database writes, but multiple app replicas
-would also need event propagation between nodes. Existing in-memory games/users
-cannot be imported automatically; the first deployment starts a fresh database.
+The event bus and WebSocket connections live in one process. Use a single
+application instance with the supplied configuration; multiple replicas would
+also need event propagation between nodes. There is no automatic import from
+an in-memory instance into PostgreSQL.
 
-## Shared database server
+## Default PostgreSQL configuration
 
-`config/database.yml` is the only Kamal configuration that owns PostgreSQL:
+The included `config/database.yml` runs PostgreSQL as a separate Kamal accessory
+on the same server as the application. Its defaults are:
 
 - Container: `DEPLOY_POSTGRES_CONTAINER`, on the shared `kamal` Docker network.
 - Image: `postgres:18.6`, pinned to a patch version; update it deliberately.
@@ -29,40 +30,58 @@ cannot be imported automatically; the first deployment starts a fresh database.
   Planning Poker's connection pool uses at most 10 connections.
 - Host port: `127.0.0.1:5432`, for access through an SSH tunnel.
 
-Application deployments and removal do not manage this accessory. Other services
-should use the same container hostname, each with its own database and login;
-do not copy the accessory definition into their application configs.
+Adjust the image, memory settings, connection limits, and port binding in
+`config/database.yml` for your server. Application deployments and removal do not
+manage this accessory. If you want other applications to share it, give each one
+its own database and login. Keep the accessory definition in one configuration
+so those applications do not independently manage the same container.
 
-The shared database service name is `DEPLOY_DATABASE_SERVICE`. All deployment
+Choose the database service name with `DEPLOY_DATABASE_SERVICE`. All deployment
 values come from the ignored `.env.deploy` or exported environment. Use
 `./bin/deploy database ...` to load them and select this configuration. Preserve
-existing service, container, and volume names when moving an existing deployment
-to this workflow; renaming them can select different resources or empty storage.
+existing service, container, and volume names when reusing an existing database;
+renaming them can select different resources or empty storage.
 
-## Initial production setup
+## Provision your database
 
-Configure `.env.deploy` as described in the [deployment guide](../README.md#deploy-with-kamal).
-Then create two local secret files, both excluded from Git, and restrict them to
-your user. Existing deployments can keep their current secret files.
-
-`.kamal/database-secrets`:
+Configure `.env.deploy` as described in the
+[deployment guide](../README.md#deploy-on-your-infrastructure).
+Create the local secrets directory:
 
 ```sh
-POSTGRES_PASSWORD=YOUR_RANDOM_ADMIN_PASSWORD
+mkdir -p .kamal
 ```
 
-`.kamal/secrets`:
+Put the application's connection URL in `.kamal/secrets` and restrict the file
+to your user:
 
 ```sh
 DATABASE_URL=postgres://planningpoker:YOUR_APP_PASSWORD@YOUR_POSTGRES_CONTAINER:5432/planningpoker?sslmode=disable
+```
+
+```sh
+chmod 600 .kamal/secrets
+```
+
+For the supplied accessory, replace `YOUR_POSTGRES_CONTAINER` with the value of
+`DEPLOY_POSTGRES_CONTAINER` from `.env.deploy`. If you already manage PostgreSQL,
+use your instance's connection URL, including its database, login, and connection
+security settings. The application's login must be able to create and migrate
+its own tables. Skip the accessory steps below and continue to
+[deploying the application](#deploy-the-application).
+
+### Start the included PostgreSQL accessory
+
+Create `.kamal/database-secrets` with the accessory's administrator password:
+
+```sh
+POSTGRES_PASSWORD=YOUR_RANDOM_ADMIN_PASSWORD
 ```
 
 Use different random passwords of at least 16 characters. Percent-encode special
 characters in the connection URL's password. The provisioning command below
 takes the original password, not its URL-encoded representation. `sslmode=disable`
 is for the local Docker network on this host.
-Replace `YOUR_POSTGRES_CONTAINER` with the value of `DEPLOY_POSTGRES_CONTAINER`
-from `.env.deploy`.
 
 ```sh
 chmod 600 .kamal/secrets .kamal/database-secrets
@@ -78,16 +97,22 @@ revokes public access to the new database and its public schema. It refuses to
 overwrite an existing login/database. If provisioning fails partway through,
 inspect the state in the administrator console before retrying.
 
-Commit the implementation before deploying: Kamal builds the committed Git
-revision. Then run:
+### Deploy the application
+
+Kamal builds the committed Git revision. Commit your application and
+configuration changes, then set up the first application deployment:
 
 ```sh
-./bin/deploy
+./bin/deploy setup
 ```
 
-The application automatically creates its tables using its own credentials.
+Use `./bin/deploy` for subsequent application deployments. The application
+automatically creates its tables using its own credentials.
 
-## Add another service
+## Share the database server with another application
+
+If you choose to share the accessory, provision a separate database and login
+for each additional application:
 
 ```sh
 ./bin/deploy database accessory exec postgres --interactive --reuse \
@@ -103,11 +128,16 @@ postgres://another_service:PASSWORD@YOUR_POSTGRES_CONTAINER:5432/another_service
 Use a lowercase service name containing only letters, digits, and underscores.
 Each future service shares the server's CPU, RAM, disk, and connection capacity.
 
-Apps on other nodes cannot use this Docker hostname. Before adding remote apps,
-bind PostgreSQL to the server's Tailscale address, configure access controls, and
-use its private address in their URLs; keep it off the public interface.
+The supplied configuration assumes the app and PostgreSQL share one server's
+Docker network. Docker container hostnames do not work across servers. For a
+database on another server, configure its network access and use an address
+reachable from the app through your private network. Keep database access off
+the public interface.
 
 ## Administration and backups
+
+The commands below apply to the supplied Kamal accessory. For a separately
+managed database, use its administration and backup tools instead.
 
 ```sh
 ./bin/deploy database accessory details postgres
@@ -139,8 +169,8 @@ backup. A patch upgrade can use
 tag; it briefly interrupts all services using this server. A major version upgrade
 requires PostgreSQL's upgrade or dump/restore procedure, not just a new image tag.
 
-To verify restoration without overwriting production, create a separate database
-from the admin console and restore into it:
+To test restoration, create a separate database from the admin console and
+restore into it without overwriting your application's database:
 
 ```sh
 # With .env.deploy exported as in the backup example above:
