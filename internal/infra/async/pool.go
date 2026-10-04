@@ -79,6 +79,7 @@ func NewAPI(repository gameService, authenticator userAuthenticator) *API {
 	p.server.OnError(rootNameSpace, func(s socketio.Conn, e error) {
 		log.Println("meet error:", e)
 	})
+
 	return p
 }
 
@@ -147,11 +148,13 @@ func (p *API) create(conn socketio.Conn, pl createPayload) interface{} {
 	}
 
 	cards := make([]games.Card, len(pl.CardsDeck.Types))
+
 	for i, v := range pl.CardsDeck.Types {
 		card, err := games.NewCard(v)
 		if err != nil {
 			return genericErrorMessage
 		}
+
 		cards[i] = *card
 	}
 
@@ -208,6 +211,7 @@ func (p *API) leave(conn socketio.Conn) string {
 		logrus.Errorf("socket game: unable to get the context")
 		return genericErrorMessage
 	}
+
 	conn.Leave(cc.gameID + cc.userID)
 
 	cmd, err := games.NewLeaveGameCommand(cc.gameID, cc.userID)

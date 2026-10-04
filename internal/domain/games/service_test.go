@@ -4,12 +4,12 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"planningpoker/internal/domain/events"
 	"planningpoker/internal/domain/games"
 	"planningpoker/test"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestNewService(t *testing.T) {
@@ -34,10 +34,13 @@ func TestNewService(t *testing.T) {
 			expError: "event bus should be provided",
 		},
 	}
+
 	for name, tt := range testCases {
 		tt := tt
+
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
 			srv, err := games.NewService(tt.gameRepo, tt.eventBus)
 
 			if tt.expError != "" {
@@ -70,8 +73,10 @@ func TestGamesService_Create(t *testing.T) {
 
 	for name, tt := range testCases {
 		tt := tt
+
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
 			srv, err := games.NewService(tt.gameRepo, eventBusStub{})
 			require.NoError(t, err)
 
@@ -110,8 +115,10 @@ func TestGamesService_Update(t *testing.T) {
 
 	for name, tt := range testCases {
 		tt := tt
+
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
 			srv, err := games.NewService(tt.gameRepo, eventBusStub{})
 			require.NoError(t, err)
 
@@ -148,8 +155,10 @@ func TestGamesService_Restart(t *testing.T) {
 
 	for name, tt := range testCases {
 		tt := tt
+
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
 			srv, err := games.NewService(tt.gameRepo, eventBusStub{})
 			require.NoError(t, err)
 
@@ -169,6 +178,7 @@ func TestGamesService_Restart(t *testing.T) {
 
 func TestGamesService_Vote(t *testing.T) {
 	t.Parallel()
+
 	card, err := games.NewCard("XS")
 	require.NoError(t, err)
 
@@ -188,8 +198,10 @@ func TestGamesService_Vote(t *testing.T) {
 
 	for name, tt := range testCases {
 		tt := tt
+
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
 			srv, err := games.NewService(tt.gameRepo, eventBusStub{})
 			require.NoError(t, err)
 
@@ -226,8 +238,10 @@ func TestGamesService_UnVote(t *testing.T) {
 
 	for name, tt := range testCases {
 		tt := tt
+
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
 			srv, err := games.NewService(tt.gameRepo, eventBusStub{})
 			require.NoError(t, err)
 
@@ -260,8 +274,10 @@ func TestGamesService_Leave(t *testing.T) {
 
 	for name, tt := range testCases {
 		tt := tt
+
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
 			srv, err := games.NewService(tt.gameRepo, eventBusStub{})
 			require.NoError(t, err)
 
@@ -294,8 +310,10 @@ func TestGamesService_Join(t *testing.T) {
 
 	for name, tt := range testCases {
 		tt := tt
+
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
 			srv, err := games.NewService(tt.gameRepo, eventBusStub{})
 			require.NoError(t, err)
 
@@ -332,8 +350,10 @@ func TestGamesService_Reveal(t *testing.T) {
 
 	for name, tt := range testCases {
 		tt := tt
+
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
 			srv, err := games.NewService(tt.gameRepo, eventBusStub{})
 			require.NoError(t, err)
 

@@ -1,22 +1,23 @@
 package main
 
 import (
+	"context"
 	"log"
+	"os"
+	"time"
 
-	"planningpoker/internal/domain/state"
-
+	"github.com/gin-contrib/gzip"
+	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 
 	"planningpoker/internal/domain/games"
+	"planningpoker/internal/domain/state"
 	"planningpoker/internal/domain/users"
 	"planningpoker/internal/infra/async"
 	"planningpoker/internal/infra/auth"
 	"planningpoker/internal/infra/eventbus"
 	"planningpoker/internal/infra/http"
 	"planningpoker/internal/infra/repository"
-
-	"github.com/gin-contrib/gzip"
-	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -24,8 +25,19 @@ func main() {
 
 	eventBus := eventbus.NewInternalBus()
 
-	gamesRepo := repository.NewMemoryGameRepository(eventBus)
-	usersRepo := repository.NewMemoryUserRepository(eventBus)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	db, err := repository.OpenPostgres(ctx, os.Getenv("DATABASE_URL"))
+
+	cancel()
+
+	if err != nil {
+		log.Fatalf("unable to initialize storage: %v", err)
+	}
+
+	defer func() { _ = db.Close() }()
+
+	gamesRepo := repository.NewPostgresGameRepository(db, eventBus)
+	usersRepo := repository.NewPostgresUserRepository(db, eventBus)
 
 	gamesService, err := games.NewService(gamesRepo, eventBus)
 	if err != nil {
@@ -43,6 +55,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("unable to create http API: %v", err)
 	}
+
+	api.SetReadinessCheck(db.PingContext)
 
 	fe := http.NewFrontend()
 

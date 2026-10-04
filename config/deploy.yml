@@ -30,6 +30,8 @@ env:
   clear:
     GIN_MODE: release
     PORT: 8080
+  secret:
+    - DATABASE_URL
 
 deploy_timeout: 60
 

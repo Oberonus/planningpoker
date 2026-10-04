@@ -3,9 +3,9 @@ package http
 import (
 	"errors"
 
-	"planningpoker/internal/domain/users"
-
 	"github.com/gin-gonic/gin"
+
+	"planningpoker/internal/domain/users"
 )
 
 func (h *API) register(c *gin.Context) {
@@ -13,6 +13,7 @@ func (h *API) register(c *gin.Context) {
 		Name string `json:"name"`
 		ID   string `json:"id"`
 	}{}
+
 	if err := c.BindJSON(&pl); err != nil {
 		badRequestError(c, err)
 		return
@@ -56,6 +57,7 @@ func (h *API) changeUserData(c *gin.Context, userID string) {
 	pl := struct {
 		Name string `json:"name"`
 	}{}
+
 	if err := c.BindJSON(&pl); err != nil {
 		badRequestError(c, err)
 		return

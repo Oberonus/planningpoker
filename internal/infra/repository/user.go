@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/sirupsen/logrus"
+
 	"planningpoker/internal/domain/events"
 	"planningpoker/internal/domain/users"
 )
@@ -42,6 +43,7 @@ func (r *MemoryUserRepository) Get(id string) (*users.User, error) {
 
 	dto := userDTO{}
 	err := json.Unmarshal(raw, &dto)
+
 	if err != nil {
 		return nil, err
 	}
@@ -52,14 +54,17 @@ func (r *MemoryUserRepository) Get(id string) (*users.User, error) {
 // GetMany retrieves many users.
 func (r *MemoryUserRepository) GetMany(ids []string) ([]users.User, error) {
 	list := make([]users.User, 0, len(ids))
+
 	for _, id := range ids {
 		u, err := r.Get(id)
 		if err != nil {
 			return nil, err
 		}
+
 		if u == nil {
 			continue
 		}
+
 		list = append(list, *u)
 	}
 

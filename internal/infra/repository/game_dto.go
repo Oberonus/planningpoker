@@ -26,11 +26,13 @@ func newCardsDeckDTO(d games.CardsDeck) cardsDeckDTO {
 
 func (d cardsDeckDTO) toDomain() (*games.CardsDeck, error) {
 	cards := make([]games.Card, len(d.Cards))
+
 	for i, v := range d.Cards {
 		c, err := games.NewCard(v)
 		if err != nil {
 			return nil, fmt.Errorf("card creation: %w", err)
 		}
+
 		cards[i] = *c
 	}
 
@@ -71,6 +73,34 @@ type gameDTO struct {
 	Players           map[string]playerDTO `json:"players"`
 	State             string               `json:"state"`
 	EveryoneCanReveal bool                 `json:"everyone_can_reveal"`
+}
+
+func newGameDTO(game *games.Game) gameDTO {
+	dto := gameDTO{
+		ID:                game.ID(),
+		Name:              game.Name(),
+		TicketURL:         game.TicketURL(),
+		CardsDeck:         newCardsDeckDTO(game.CardsDeck()),
+		Players:           make(map[string]playerDTO),
+		State:             game.State(),
+		EveryoneCanReveal: game.EveryoneCanReveal(),
+	}
+
+	for id, p := range game.Players() {
+		votedCard := ""
+		if p.VotedCard != nil {
+			votedCard = p.VotedCard.Type()
+		}
+
+		dto.Players[id] = playerDTO{
+			VotedCard:  votedCard,
+			CanReveal:  p.CanReveal,
+			Active:     p.Active,
+			Confidence: p.Confidence,
+		}
+	}
+
+	return dto
 }
 
 func (d gameDTO) toDomain() (*games.Game, error) {

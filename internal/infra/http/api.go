@@ -2,9 +2,13 @@
 package http
 
 import (
+	"context"
 	"errors"
+	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
+
 	"planningpoker/internal/domain/users"
 )
 
@@ -23,8 +27,9 @@ type UsersService interface {
 
 // API contains all HTTP API handlers.
 type API struct {
-	usersService  UsersService
-	authenticator userAuthenticator
+	usersService   UsersService
+	authenticator  userAuthenticator
+	readinessCheck func(context.Context) error
 }
 
 // NewAPI creates a new API instance.
@@ -53,7 +58,22 @@ func (h *API) SetupRoutes(r gin.IRoutes) {
 	r.PUT("/api/v1/me", h.withUser(h.changeUserData))
 }
 
-// Alive returns status 200 with empty body.
+// SetReadinessCheck adds a dependency check used by the deployment proxy.
+func (h *API) SetReadinessCheck(check func(context.Context) error) {
+	h.readinessCheck = check
+}
+
+// Alive returns status 200 when storage is reachable, or 503 when it is unavailable.
 func (h *API) Alive(ctx *gin.Context) {
+	if h.readinessCheck != nil {
+		checkCtx, cancel := context.WithTimeout(ctx.Request.Context(), 2*time.Second)
+		defer cancel()
+
+		if err := h.readinessCheck(checkCtx); err != nil {
+			ctx.JSON(http.StatusServiceUnavailable, gin.H{"error": "storage unavailable"})
+			return
+		}
+	}
+
 	success(ctx, nil)
 }

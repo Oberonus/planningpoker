@@ -1,2 +1,2 @@
-// Package repository contains in-memory repositories implementation for all aggregates.
+// Package repository contains memory and PostgreSQL repositories for domain aggregates.
 package repository

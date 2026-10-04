@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/sirupsen/logrus"
+
 	"planningpoker/internal/domain/events"
 )
 
@@ -25,12 +26,15 @@ func NewService(gr GameRepository, ur UsersRepository, pub Publisher, eventBus e
 	if gr == nil {
 		return nil, errors.New("games repository should be provided")
 	}
+
 	if ur == nil {
 		return nil, errors.New("users repository should be provided")
 	}
+
 	if eventBus == nil {
 		return nil, errors.New("event bus should be provided")
 	}
+
 	if pub == nil {
 		return nil, errors.New("publisher should be provided")
 	}
@@ -49,8 +53,12 @@ func NewService(gr GameRepository, ur UsersRepository, pub Publisher, eventBus e
 // GameState returns a current state of a game.
 func (s *Service) GameState(gameID string) (*GameState, error) {
 	game, err := s.gamesRepo.Get(gameID)
-	if err != nil || game == nil {
+	if err != nil {
 		return nil, fmt.Errorf("get game: %w", err)
+	}
+
+	if game == nil {
+		return nil, errors.New("game not found")
 	}
 
 	userIDs := make([]string, 0)
@@ -72,6 +80,7 @@ func (s *Service) processGameUpdated(e events.DomainEvent) {
 	gameState, err := s.GameState(e.AggregateID())
 	if err != nil {
 		logrus.Errorf("failed to fetch game state %v", err)
+		return
 	}
 
 	for _, playerState := range gameState.Players {

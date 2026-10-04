@@ -21,7 +21,11 @@ func TestMain(m *testing.M) {
 		}
 	} else {
 		pokerHost = "localhost"
-		pokerPort = "8080"
+		pokerPort = os.Getenv("POKER_TEST_PORT")
+
+		if pokerPort == "" {
+			pokerPort = "8080"
+		}
 	}
 
 	os.Exit(m.Run())

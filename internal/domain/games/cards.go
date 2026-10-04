@@ -41,6 +41,7 @@ func NewCardsDeck(name string, cards []Card) (*CardsDeck, error) {
 	if name == "" {
 		return nil, errors.New("name should be provided")
 	}
+
 	if len(cards) == 0 {
 		return nil, errors.New("cards should be provided")
 	}

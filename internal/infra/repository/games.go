@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/sirupsen/logrus"
+
 	"planningpoker/internal/domain/events"
 	"planningpoker/internal/domain/games"
 )
@@ -37,6 +38,7 @@ func (r *MemoryGameRepository) ModifyExclusively(id string, cb func(*games.Game)
 	if err != nil {
 		return fmt.Errorf("game fetching: %w", err)
 	}
+
 	if game == nil {
 		return errors.New("game not found")
 	}
@@ -54,28 +56,7 @@ func (r *MemoryGameRepository) ModifyExclusively(id string, cb func(*games.Game)
 
 // Save persists the game.
 func (r *MemoryGameRepository) Save(game *games.Game) error {
-	dto := gameDTO{
-		ID:                game.ID(),
-		Name:              game.Name(),
-		TicketURL:         game.TicketURL(),
-		CardsDeck:         newCardsDeckDTO(game.CardsDeck()),
-		Players:           make(map[string]playerDTO),
-		State:             game.State(),
-		EveryoneCanReveal: game.EveryoneCanReveal(),
-	}
-
-	for id, p := range game.Players() {
-		votedCard := ""
-		if p.VotedCard != nil {
-			votedCard = p.VotedCard.Type()
-		}
-		dto.Players[id] = playerDTO{
-			VotedCard:  votedCard,
-			CanReveal:  p.CanReveal,
-			Active:     p.Active,
-			Confidence: p.Confidence,
-		}
-	}
+	dto := newGameDTO(game)
 
 	raw, err := json.Marshal(dto)
 	if err != nil {
@@ -110,6 +91,7 @@ func (r *MemoryGameRepository) Get(id string) (*games.Game, error) {
 
 	dto := gameDTO{}
 	err := json.Unmarshal(raw, &dto)
+
 	if err != nil {
 		return nil, err
 	}
@@ -123,15 +105,19 @@ func (r *MemoryGameRepository) GetActiveGamesByPlayerID(playerID string) ([]game
 	defer r.m.RUnlock()
 
 	list := make([]games.Game, 0)
+
 	for _, j := range r.games {
 		dto := gameDTO{}
 		err := json.Unmarshal(j, &dto)
+
 		if err != nil {
 			return nil, err
 		}
+
 		if dto.State != games.GameStateStarted {
 			continue
 		}
+
 		if _, ok := dto.Players[playerID]; !ok {
 			continue
 		}

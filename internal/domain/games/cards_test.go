@@ -3,14 +3,15 @@ package games_test
 import (
 	"testing"
 
-	"planningpoker/internal/domain/games"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"planningpoker/internal/domain/games"
 )
 
 func TestNewCard(t *testing.T) {
 	t.Parallel()
+
 	sucCard := games.Card("xs")
 
 	testCases := map[string]struct {
@@ -34,14 +35,18 @@ func TestNewCard(t *testing.T) {
 
 	for name, tt := range testCases {
 		tt := tt
+
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
 			card, err := games.NewCard(tt.typ)
+
 			if tt.expErr != "" {
 				assert.EqualError(t, err, tt.expErr)
 			} else {
 				assert.NoError(t, err)
 			}
+
 			assert.Equal(t, tt.expCard, card)
 		})
 	}
@@ -49,12 +54,14 @@ func TestNewCard(t *testing.T) {
 
 func TestNewUnrevealedCard(t *testing.T) {
 	t.Parallel()
+
 	card := games.NewUnrevealedCard()
 	assert.Equal(t, "*", card.Type())
 }
 
 func TestNewCardsDeck(t *testing.T) {
 	t.Parallel()
+
 	card, err := games.NewCard("xs")
 	require.NoError(t, err)
 
@@ -81,9 +88,12 @@ func TestNewCardsDeck(t *testing.T) {
 
 	for name, tt := range testCases {
 		tt := tt
+
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
 			deck, err := games.NewCardsDeck(tt.name, tt.cards)
+
 			if tt.expErr != "" {
 				assert.EqualError(t, err, tt.expErr)
 				assert.Nil(t, deck)
@@ -99,6 +109,7 @@ func TestNewCardsDeck(t *testing.T) {
 
 func TestCardsDeck_IsInDeck(t *testing.T) {
 	t.Parallel()
+
 	card1, err := games.NewCard("XS")
 	require.NoError(t, err)
 	card2, err := games.NewCard("S")
@@ -123,10 +134,13 @@ func TestCardsDeck_IsInDeck(t *testing.T) {
 
 	for name, tt := range testCases {
 		tt := tt
+
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
 			card, err := games.NewCard(tt.card)
 			require.NoError(t, err)
+
 			found := deck.IsInDeck(*card)
 			assert.Equal(t, tt.expFound, found)
 		})

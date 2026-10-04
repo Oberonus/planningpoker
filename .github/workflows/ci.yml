@@ -8,11 +8,49 @@ jobs:
   build:
     name: CI
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18.6
+        env:
+          POSTGRES_PASSWORD: ci-admin-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      TEST_DATABASE_URL: postgres://planningpoker_ci:ci-application-password@127.0.0.1:5432/planningpoker_ci?sslmode=disable
     steps:
       - name: Check out
-        uses: actions/checkout@v2
-      - name: Perform CI
-        run: ./mage.sh ci
+        uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+      - name: Provision application database
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          docker cp config/postgres/provision.sh "$POSTGRES_CONTAINER:/tmp/provision.sh"
+          printf '%s\n' 'ci-application-password' | docker exec -i "$POSTGRES_CONTAINER" bash /tmp/provision.sh planningpoker_ci
+      - name: Check code style and domain boundaries
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.61.0
+          args: --config .golangci-style.yml
+      - name: Vet and test with PostgreSQL
+        run: |
+          go vet -mod=vendor ./...
+          go test -mod=vendor -race -tags=integration -coverprofile=coverage.txt -covermode=atomic ./...
+      - name: Build and smoke test application container
+        run: |
+          docker build -t planningpoker:test .
+          docker run -d --name planningpoker-ci --network host -e DATABASE_URL="$TEST_DATABASE_URL" planningpoker:test
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8080/alive; then break; fi
+            sleep 1
+          done
+          go test -mod=vendor -tags=component ./test
       - name: Update coverage
         uses: codecov/codecov-action@v2
         with:

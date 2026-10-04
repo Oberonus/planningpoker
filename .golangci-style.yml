@@ -1,0 +1,54 @@
+# Keep the tool version aligned with CI and AGENTS.md: golangci-lint v1.61.0.
+run:
+  timeout: 5m
+  modules-download-mode: vendor
+  tests: true
+  build-tags:
+    - component
+    - integration
+
+linters:
+  disable-all: true
+  enable:
+    - gofmt
+    - gci
+    - wsl
+    - depguard
+
+linters-settings:
+  gci:
+    sections:
+      - standard
+      - default
+      - prefix(planningpoker)
+    custom-order: true
+  wsl:
+    allow-cuddle-declarations: true
+    allow-assign-and-call: true
+    allow-multiline-assign: false
+  depguard:
+    rules:
+      domain:
+        files:
+          - "**/internal/domain/**/*.go"
+        list-mode: lax
+        deny:
+          - pkg: planningpoker/internal/infra
+            desc: Domain code must depend on domain ports, not infrastructure adapters.
+          - pkg: planningpoker/cmd
+            desc: Application wiring belongs outside the domain.
+          - pkg: database/sql
+            desc: SQL belongs in repository adapters.
+          - pkg: github.com/jackc/pgx
+            desc: PostgreSQL clients belong in repository adapters.
+          - pkg: github.com/gin-gonic
+            desc: HTTP framework code belongs in transport adapters.
+          - pkg: github.com/googollee/go-socket.io
+            desc: WebSocket framework code belongs in transport adapters.
+          - pkg: net/http
+            desc: HTTP code belongs in transport adapters.
+
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0

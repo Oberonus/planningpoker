@@ -4,10 +4,10 @@ import (
 	"errors"
 	"testing"
 
-	"planningpoker/internal/domain/users"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"planningpoker/internal/domain/users"
 )
 
 func TestNewService(t *testing.T) {
@@ -27,6 +27,7 @@ func TestNewService(t *testing.T) {
 
 	for name, tt := range testCases {
 		tt := tt
+
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
@@ -69,6 +70,7 @@ func TestService_Register(t *testing.T) {
 
 	for name, tt := range testCases {
 		tt := tt
+
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
@@ -93,6 +95,7 @@ func TestService_Register(t *testing.T) {
 
 func TestService_Update(t *testing.T) {
 	t.Parallel()
+
 	uid := "1"
 
 	testCases := map[string]struct {
@@ -137,6 +140,7 @@ func TestService_Update(t *testing.T) {
 
 	for name, tt := range testCases {
 		tt := tt
+
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
@@ -161,6 +165,7 @@ func TestService_Update(t *testing.T) {
 
 func TestService_AuthenticateByID(t *testing.T) {
 	t.Parallel()
+
 	uid := "1"
 
 	testCases := map[string]struct {
@@ -186,6 +191,7 @@ func TestService_AuthenticateByID(t *testing.T) {
 
 	for name, tt := range testCases {
 		tt := tt
+
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
@@ -218,6 +224,7 @@ func (u usersRepoStub) Get(id string) (*users.User, error) {
 	if u.getUser != nil && u.getUser.ID() != id {
 		return nil, errors.New("test failed - user id does not match")
 	}
+
 	return u.getUser, u.getErr
 }
 

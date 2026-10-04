@@ -17,6 +17,7 @@ func newPlayerStateResponse(gState state.GameState, pState state.PlayerState) Pl
 	resp := PlayerStateResponse{
 		Name: pState.Name,
 	}
+
 	if pState.VotedCard != nil {
 		if gState.State != games.GameStateFinished {
 			resp.VotedCard = games.NewUnrevealedCard().Type()
@@ -25,6 +26,7 @@ func newPlayerStateResponse(gState state.GameState, pState state.PlayerState) Pl
 			resp.Confidence = pState.Confidence
 		}
 	}
+
 	return resp
 }
 
@@ -38,6 +40,7 @@ func newCardsDeckResponse(cd games.CardsDeck) cardsDeckResponse {
 	for _, c := range cd.Cards() {
 		resp.Cards = append(resp.Cards, c.Type())
 	}
+
 	return resp
 }
 
@@ -62,12 +65,15 @@ func NewGameStateResponse(state state.GameState, player state.PlayerState) GameS
 		State:     state.State,
 		CanReveal: player.CanReveal,
 	}
+
 	if player.VotedCard != nil {
 		resp.VotedCard = player.VotedCard.Type()
 		resp.Confidence = player.Confidence
 	}
+
 	for _, p := range state.Players {
 		resp.Players = append(resp.Players, newPlayerStateResponse(state, p))
 	}
+
 	return resp
 }

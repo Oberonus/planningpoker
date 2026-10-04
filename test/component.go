@@ -4,6 +4,7 @@
 package test
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -15,6 +16,7 @@ import (
 	"github.com/ory/dockertest/v3/docker"
 
 	"planningpoker/infra/dev/mage"
+	"planningpoker/internal/infra/repository"
 )
 
 const (
@@ -45,17 +47,51 @@ func StartPokerContainer() error {
 		OutputStream: ioutil.Discard,
 		ContextDir:   "..",
 	})
+
 	if err != nil {
 		return fmt.Errorf("build image %s: %w", imageName, err)
 	}
 
 	fullName := env.SessionID + "-" + pokerContainerName
+	dbHost := fullName + "-postgres"
+	_, err = pool.RunWithOptions(&dockertest.RunOptions{
+		Name:       dbHost,
+		Repository: "postgres",
+		Tag:        "18.6",
+		NetworkID:  env.NetworkID,
+		Env: []string{
+			"POSTGRES_USER=planningpoker",
+			"POSTGRES_PASSWORD=component-test-password",
+			"POSTGRES_DB=planningpoker",
+		},
+	})
+
+	if err != nil {
+		return fmt.Errorf("start PostgreSQL: %w", err)
+	}
+
+	dsn := fmt.Sprintf("postgres://planningpoker:component-test-password@%s:5432/planningpoker?sslmode=disable", dbHost)
+	pool.MaxWait = 30 * time.Second
+
+	if err := pool.Retry(func() error {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		db, err := repository.OpenPostgres(ctx, dsn)
+		if err != nil {
+			return err
+		}
+		return db.Close()
+	}); err != nil {
+		return fmt.Errorf("wait for PostgreSQL: %w", err)
+	}
+
 	opts := &dockertest.RunOptions{
 		Name:       fullName,
 		Repository: pokerContainerName,
 		Tag:        env.SessionID,
 		NetworkID:  env.NetworkID,
 		User:       fmt.Sprintf("%s:%s", env.UserID, env.GroupID),
+		Env:        []string{"DATABASE_URL=" + dsn},
 	}
 
 	_, err = pool.RunWithOptions(opts)

@@ -17,6 +17,7 @@ func NewService(gr GameRepository, eb events.EventBus) (*Service, error) {
 	if gr == nil {
 		return nil, errors.New("games repository should be provided")
 	}
+
 	if eb == nil {
 		return nil, errors.New("event bus should be provided")
 	}
@@ -41,6 +42,7 @@ func (s *Service) Create(cmd CreateGameCommand) (string, error) {
 	if err := game.Join(*joinCmd); err != nil {
 		return "", err
 	}
+
 	if err := s.gamesRepo.Save(game); err != nil {
 		return "", err
 	}
@@ -108,6 +110,7 @@ func (s *Service) processUserUpdated(e events.DomainEvent) {
 			g.ForceChanged()
 			return nil
 		})
+
 		if err != nil {
 			fmt.Printf("no way to update the game, will be updated eventually")
 		}

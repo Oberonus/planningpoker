@@ -62,6 +62,7 @@ func findUserInListByID(id string, users []users.User) *users.User {
 			return &u
 		}
 	}
+
 	return nil
 }
 
@@ -72,5 +73,6 @@ func (s GameState) PlayerByID(userID string) (*PlayerState, error) {
 			return &player, nil
 		}
 	}
+
 	return nil, fmt.Errorf("player with id=%v not found", userID)
 }

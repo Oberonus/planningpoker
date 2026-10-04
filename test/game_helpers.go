@@ -52,6 +52,7 @@ func (g *Game) UserJoins(uid string) *Game {
 	cmd, err := games.NewJoinGameCommand(g.game.ID(), uid)
 	require.NoError(g.t, err)
 	g.lastError = g.game.Join(*cmd)
+
 	return g
 }
 
@@ -62,6 +63,7 @@ func (g *Game) UserVotes(uid, cardName string) *Game {
 	cmd, err := games.NewVoteCommand(g.game.ID(), uid, *card, games.ConfidenceNormal)
 	require.NoError(g.t, err)
 	g.lastError = g.game.Vote(*cmd)
+
 	return g
 }
 
@@ -70,6 +72,7 @@ func (g *Game) UserLeaves(uid string) *Game {
 	cmd, err := games.NewLeaveGameCommand(g.game.ID(), uid)
 	require.NoError(g.t, err)
 	g.lastError = g.game.Leave(*cmd)
+
 	return g
 }
 
@@ -78,6 +81,7 @@ func (g *Game) UserUnVotes(uid string) *Game {
 	cmd, err := games.NewUnVoteCommand(g.game.ID(), uid)
 	require.NoError(g.t, err)
 	g.lastError = g.game.UnVote(*cmd)
+
 	return g
 }
 
@@ -86,6 +90,7 @@ func (g *Game) UserRestartsGame(uid string) *Game {
 	cmd, err := games.NewRestartGameCommand(g.game.ID(), uid)
 	require.NoError(g.t, err)
 	g.lastError = g.game.Restart(*cmd)
+
 	return g
 }
 
@@ -94,6 +99,7 @@ func (g *Game) ShouldHaveVote(uid string, cardName string) *Game {
 	card, err := games.NewCard(cardName)
 	require.NoError(g.t, err)
 	require.Equal(g.t, card, g.game.Players()[uid].VotedCard)
+
 	return g
 }
 
@@ -108,6 +114,7 @@ func (g *Game) UserReveals(uid string) *Game {
 	cmd, err := games.NewRevealCardsCommand(g.game.ID(), uid)
 	require.NoError(g.t, err)
 	g.lastError = g.game.Reveal(*cmd)
+
 	return g
 }
 
@@ -127,6 +134,7 @@ func (g *Game) GameShouldBeRunning() *Game {
 func (g *Game) ShouldFail(part string) *Game {
 	require.Error(g.t, g.lastError)
 	require.Contains(g.t, g.lastError.Error(), part)
+
 	return g
 }
 
@@ -141,6 +149,7 @@ func (g *Game) UserUpdatesGameName(uid, name string) *Game {
 	cmd, err := games.NewUpdateGameCommand(g.game.ID(), name, g.game.TicketURL(), uid)
 	require.NoError(g.t, err)
 	g.lastError = g.game.Update(*cmd)
+
 	return g
 }
 
@@ -154,6 +163,7 @@ func (g *Game) ShouldHaveGameName(name string) *Game {
 func NewSimpleGame(t *testing.T, everybodyCanReveal bool) *games.Game {
 	cmd, err := games.NewCreateGameCommand("", "", "", NewTestDeck(t), everybodyCanReveal)
 	require.NoError(t, err)
+
 	return games.NewGame(*cmd)
 }
 

@@ -3,10 +3,10 @@ package users_test
 import (
 	"testing"
 
-	"planningpoker/internal/domain/users"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"planningpoker/internal/domain/users"
 )
 
 func TestNewUser(t *testing.T) {
@@ -26,6 +26,7 @@ func TestNewUser(t *testing.T) {
 
 	for name, tt := range testCases {
 		tt := tt
+
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
@@ -60,6 +61,7 @@ func TestNewRawUser(t *testing.T) {
 
 	for name, tt := range testCases {
 		tt := tt
+
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 

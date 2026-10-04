@@ -3,3 +3,26 @@ services:
     build: .
     ports:
       - "8080:8080"
+    environment:
+      DATABASE_URL: postgres://planningpoker:local-development-only@postgres:5432/planningpoker?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+  postgres:
+    image: postgres:18.6
+    environment:
+      POSTGRES_USER: planningpoker
+      POSTGRES_PASSWORD: local-development-only
+      POSTGRES_DB: planningpoker
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    ports:
+      - "127.0.0.1:54338:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U planningpoker -d planningpoker"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    shm_size: 256mb
+volumes:
+  postgres-data:

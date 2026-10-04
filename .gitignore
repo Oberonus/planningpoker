@@ -3,3 +3,5 @@ coverage.txt
 .cache
 .docker
 .kamal/secrets*
+.kamal/database-secrets*
+.env*

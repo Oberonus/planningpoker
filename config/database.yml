@@ -1,0 +1,42 @@
+# This configuration owns the shared database server. Other applications only
+# reference its hostname; they must not redeclare or manage this accessory.
+service: deminworks-data
+image: postgres
+minimum_version: 2.12.0
+servers:
+  - deminworks
+ssh:
+  user: alex
+registry:
+  server: localhost:5555
+builder:
+  arch: amd64
+secrets_path: .kamal/database-secrets
+
+accessories:
+  postgres:
+    service: deminworks-postgres
+    image: postgres:18.6
+    host: deminworks
+    # Same-host apps connect over the private 'kamal' Docker network.
+    # Host access is restricted to loopback (use an SSH tunnel for administration).
+    port: "127.0.0.1:5432:5432"
+    cmd: >-
+      postgres -c shared_buffers=256MB -c work_mem=4MB
+      -c maintenance_work_mem=64MB -c max_connections=60
+    env:
+      clear:
+        POSTGRES_USER: postgres
+        POSTGRES_DB: postgres
+        POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --data-checksums"
+      secret:
+        - POSTGRES_PASSWORD
+    # PostgreSQL 18 stores data beneath /var/lib/postgresql/18/docker.
+    # A stable named volume survives container replacement and app removal.
+    volumes:
+      - deminworks-postgres-data:/var/lib/postgresql
+    files:
+      - config/postgres/provision.sh:/opt/postgres/provision.sh:ro
+    options:
+      shm-size: 256m
+      memory: 1g

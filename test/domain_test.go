@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	"planningpoker/internal/domain/games"
 	"planningpoker/internal/domain/state"
 	"planningpoker/internal/domain/users"
@@ -85,9 +86,11 @@ func TestWorkflow(t *testing.T) {
 func newTestCardsDeck(t *testing.T) games.CardsDeck {
 	types := []string{"XS", "?"}
 	cards := make([]games.Card, len(types))
+
 	for i, v := range types {
 		c, err := games.NewCard(v)
 		require.NoError(t, err)
+
 		cards[i] = *c
 	}
 

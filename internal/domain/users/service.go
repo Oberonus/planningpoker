@@ -41,6 +41,7 @@ func (s *Service) Update(cmd UpdateCommand) (*User, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if u == nil {
 		return nil, errors.New("user not found")
 	}
@@ -67,6 +68,7 @@ func (s *Service) AuthenticateByID(cmd AuthByIDCommand) (*User, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if u == nil {
 		return nil, errors.New("user not found")
 	}

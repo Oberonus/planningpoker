@@ -16,8 +16,7 @@ aloud sets a precedent for subsequent estimates.
 
 ## How to run
 
-The service is fully dockerized, does not have any external dependencies and can be 
-easily run locally with
+The service is fully dockerized. Compose runs the app and PostgreSQL locally:
 ```bash
 docker-compose up
 ```
@@ -45,6 +44,10 @@ ports 80 and 443 reachable. For the simplest Let's Encrypt setup, use Cloudflare
 DNS-only mode. If enabling Cloudflare proxying afterward, use Full (strict)
 SSL/TLS mode and keep WebSockets enabled.
 
+Before the first deployment with PostgreSQL, follow the
+[database setup guide](docs/postgres.md#initial-production-setup) to boot the shared
+Kamal accessory, provision the app's database/login, and configure local secrets.
+
 Run the first deployment from this directory while connected to Tailscale,
 with a local Docker engine running:
 
@@ -67,15 +70,19 @@ It runs a local registry on port 5555 and transfers images through SSH tunnels,
 so external registry credentials are unnecessary. The proxy serves HTTPS and
 checks `/alive` on application port 8080 before switching traffic.
 
-Games and users are stored in memory; restarting or deploying resets them.
+Games and users are persisted in PostgreSQL. The app requires `DATABASE_URL` and
+applies its schema migrations at startup. PostgreSQL is managed separately by
+Kamal through `config/database.yml`, so other services can share the database
+server with separate databases and credentials. Follow the
+[PostgreSQL setup and operations guide](docs/postgres.md) before the first deploy.
 
 ## Development
 
 This service is built with Domain Driven Design, CQRS, event based communication, clean code and
 hexagonal architecture in mind (yep, a lot of buzzwords here).
 
-For now, it is a simple in-memory implementation of a planning poker tool 
-with backend and frontend logic living in a single binary.
+Backend and frontend logic live in a single binary, with PostgreSQL persistence.
+Go 1.23 or newer is required for backend development.
 
 Languages used:
 - Backend - Go
@@ -98,8 +105,8 @@ Golang app serves the frontend by itself, so no additional layer (e.g. NGINX) is
 
 <img alt="Architecture" src="docs/architecture.png" />
 
-The current implementation is extremely simple with in-memory Event Bus and database, but can be easily 
-extended to support real storage.
+The event bus remains in memory. Games are stored as JSONB documents and users
+in a relational table; memory repositories remain available for unit tests.
 
 ### How it works
 
@@ -145,27 +152,27 @@ There is a possibility to run automatic watcher/builder for frontend:
 It will spinup `node:14-alpine` container, mount all frontend codebase and
 build right inside the container, avoiding any host dependencies.
 
-### Running CI pipeline locally
+### Verification
 
-The whole CI pipeline is dockerized and can be run with
+Repository-wide coding conventions are in [AGENTS.md](AGENTS.md). The style check
+enforces import grouping, blank-line spacing, and domain dependency boundaries:
+
 ```bash
-./mage.sh ci
+golangci-lint run --config .golangci-style.yml ./...
 ```
 
-It will run:
-- Linting
-- Unit tests
-- Component tests
+Use golangci-lint v1.61.0, matching CI.
 
-Run only linting step:
+CI runs Go vet, unit and PostgreSQL integration tests with the race detector,
+and a container smoke test. For local checks:
+
 ```bash
-./mage.sh lint
+go vet -mod=vendor ./...
+go test -mod=vendor -race ./...
 ```
 
-Run only unit tests:
-```bash
-./mage.sh testUnit
-```
+See the [PostgreSQL guide](docs/postgres.md#local-development-and-verification)
+for integration tests using a disposable database.
 
 ## Contribution
 Your contribution is very welcomed! Please create pull request or issue.

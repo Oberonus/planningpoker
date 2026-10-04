@@ -4,15 +4,15 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 func (h *API) withUser(cb func(*gin.Context, string)) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		auth := c.GetHeader("Authorization")
 		parts := strings.Split(auth, " ")
+
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			unauthorizedError(c, errors.New("unauthorized"))
 			return
@@ -22,6 +22,7 @@ func (h *API) withUser(cb func(*gin.Context, string)) gin.HandlerFunc {
 		if err != nil {
 			logrus.Infof("user auth failed: %v", err)
 			unauthorizedError(c, errors.New("unauthorized"))
+
 			return
 		}
 

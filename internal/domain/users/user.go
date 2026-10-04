@@ -5,10 +5,10 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/google/uuid"
+
 	"planningpoker/internal/domain"
 	"planningpoker/internal/domain/events"
-
-	"github.com/google/uuid"
 )
 
 // User is a user aggregate.
@@ -23,6 +23,7 @@ func NewUser(name string) (*User, error) {
 	u := &User{
 		id: strings.ReplaceAll(uuid.New().String(), "-", ""),
 	}
+
 	if err := u.NameAs(name); err != nil {
 		return nil, err
 	}
@@ -54,6 +55,7 @@ func (u *User) NameAs(name string) error {
 	if name == "" {
 		return errors.New("user name should be provided")
 	}
+
 	u.name = name
 	u.AddEvent(events.NewDomainEventBuilder(events.EventTypeUserUpdated).ForAggregate(u.ID()).Build())
 

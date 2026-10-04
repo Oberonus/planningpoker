@@ -30,7 +30,9 @@ func GetEnv() (*Env, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	gid, err := sh.Output("id", "-g")
+
 	if err != nil {
 		return nil, err
 	}
@@ -48,6 +50,7 @@ func GetEnv() (*Env, error) {
 	}
 
 	nid := os.Getenv("MAGE_NETWORK_ID")
+
 	if sid == "" {
 		return nil, errors.New("MAGE_NETWORK_ID is not set")
 	}

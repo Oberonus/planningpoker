@@ -5,10 +5,10 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/google/uuid"
+
 	"planningpoker/internal/domain"
 	"planningpoker/internal/domain/events"
-
-	"github.com/google/uuid"
 )
 
 const (
@@ -162,6 +162,7 @@ func (g *Game) Restart(cmd RestartGameCommand) error {
 	if !ok {
 		return errors.New("user is not a player")
 	}
+
 	g.state = GameStateStarted
 
 	// cleanup non-active players and remove votes
@@ -171,8 +172,10 @@ func (g *Game) Restart(cmd RestartGameCommand) error {
 			delete(players, id)
 			continue
 		}
+
 		players[id].VotedCard = nil
 	}
+
 	g.players = players
 
 	g.setChanged()
