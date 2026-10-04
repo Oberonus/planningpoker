@@ -60,7 +60,8 @@ export default {
     transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
     box-shadow 240ms ease,
     border-color 180ms ease,
-    background 180ms ease;
+    background 180ms ease,
+    opacity 180ms ease var(--pending-fade-delay, 0ms);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -103,6 +104,14 @@ export default {
 
 .vote-card[aria-disabled="true"] {
   cursor: wait;
+}
+
+.vote-card[aria-disabled="true"]:not(:disabled) {
+  --pending-fade-delay: 300ms;
+  opacity: 0.6;
+}
+
+.vote-card:disabled {
   opacity: 0.6;
 }
 
