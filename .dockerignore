@@ -12,3 +12,4 @@ web/dist
 coverage.txt
 *.log
 .env*
+*.dump

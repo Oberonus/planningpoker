@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+  cat <<'HELP'
+Usage: ./bin/deploy [Kamal command and arguments]
+       ./bin/deploy database <Kamal command and arguments>
+
+Loads .env.deploy from the project root and runs Kamal locally.
+With no arguments, deploys the application. The database prefix selects
+config/database.yml instead of config/deploy.yml.
+
+Examples:
+  ./bin/deploy
+  ./bin/deploy app logs
+  ./bin/deploy database accessory details postgres
+HELP
+  exit 0
+fi
+
+project_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$project_dir"
+
+if [[ -f .env.deploy ]]; then
+  # Operators own this ignored shell file; export its settings for Kamal's ERB.
+  set -a
+  source .env.deploy
+  set +a
+fi
+
+configuration_file=config/deploy.yml
+required_variables=(DEPLOY_HOST DEPLOY_SSH_USER)
+
+if [[ "${1:-}" == "database" ]]; then
+  shift
+  configuration_file=config/database.yml
+  required_variables+=(DEPLOY_DATABASE_SERVICE DEPLOY_POSTGRES_CONTAINER DEPLOY_POSTGRES_VOLUME)
+
+  if [[ $# -eq 0 ]]; then
+    echo "Specify a Kamal database command, for example: database accessory details postgres" >&2
+    exit 2
+  fi
+else
+  required_variables+=(DEPLOY_APP_HOST)
+
+  if [[ $# -eq 0 ]]; then
+    set -- deploy
+  fi
+fi
+
+for variable in "${required_variables[@]}"; do
+  if [[ -z "${!variable:-}" ]]; then
+    echo "Set $variable in .env.deploy or the exported environment." >&2
+    exit 1
+  fi
+
+  export "$variable"
+done
+
+if ! command -v kamal >/dev/null 2>&1; then
+  echo "Install Kamal 2.12.0 before deploying (see README.md)." >&2
+  exit 1
+fi
+
+exec kamal -c "$configuration_file" "$@"

@@ -1,16 +1,17 @@
+<% require "json" %>
 service: planningpoker
 image: planningpoker
 minimum_version: 2.12.0
 
 servers:
   web:
-    - deminworks
+    - <%= ENV.fetch("DEPLOY_HOST").to_json %>
 
 ssh:
-  user: alex
+  user: <%= ENV.fetch("DEPLOY_SSH_USER").to_json %>
 
 proxy:
-  host: poker.deminworks.com
+  host: <%= ENV.fetch("DEPLOY_APP_HOST").to_json %>
   ssl: true
   app_port: 8080
   healthcheck:

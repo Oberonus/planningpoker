@@ -21,9 +21,9 @@ cannot be imported automatically; the first deployment starts a fresh database.
 
 `config/database.yml` is the only Kamal configuration that owns PostgreSQL:
 
-- Container: `deminworks-postgres`, on the shared `kamal` Docker network.
+- Container: `DEPLOY_POSTGRES_CONTAINER`, on the shared `kamal` Docker network.
 - Image: `postgres:18.6`, pinned to a patch version; update it deliberately.
-- Data: named Docker volume `deminworks-postgres-data`, mounted at
+- Data: named Docker volume `DEPLOY_POSTGRES_VOLUME`, mounted at
   `/var/lib/postgresql` as required by the PostgreSQL 18 image.
 - Resources: 1 GB container limit, 256 MB shared buffers, 60 connections.
   Planning Poker's connection pool uses at most 10 connections.
@@ -33,9 +33,17 @@ Application deployments and removal do not manage this accessory. Other services
 should use the same container hostname, each with its own database and login;
 do not copy the accessory definition into their application configs.
 
+The shared database service name is `DEPLOY_DATABASE_SERVICE`. All deployment
+values come from the ignored `.env.deploy` or exported environment. Use
+`./bin/deploy database ...` to load them and select this configuration. Preserve
+existing service, container, and volume names when moving an existing deployment
+to this workflow; renaming them can select different resources or empty storage.
+
 ## Initial production setup
 
-Create two local files, both excluded from Git, and restrict them to your user:
+Configure `.env.deploy` as described in the [deployment guide](../README.md#deploy-with-kamal).
+Then create two local secret files, both excluded from Git, and restrict them to
+your user. Existing deployments can keep their current secret files.
 
 `.kamal/database-secrets`:
 
@@ -46,19 +54,21 @@ POSTGRES_PASSWORD=YOUR_RANDOM_ADMIN_PASSWORD
 `.kamal/secrets`:
 
 ```sh
-DATABASE_URL=postgres://planningpoker:YOUR_APP_PASSWORD@deminworks-postgres:5432/planningpoker?sslmode=disable
+DATABASE_URL=postgres://planningpoker:YOUR_APP_PASSWORD@YOUR_POSTGRES_CONTAINER:5432/planningpoker?sslmode=disable
 ```
 
 Use different random passwords of at least 16 characters. Percent-encode special
 characters in the connection URL's password. The provisioning command below
 takes the original password, not its URL-encoded representation. `sslmode=disable`
 is for the local Docker network on this host.
+Replace `YOUR_POSTGRES_CONTAINER` with the value of `DEPLOY_POSTGRES_CONTAINER`
+from `.env.deploy`.
 
 ```sh
 chmod 600 .kamal/secrets .kamal/database-secrets
-kamal accessory boot postgres -c config/database.yml
-kamal accessory exec postgres -c config/database.yml --reuse 'pg_isready -U postgres'
-kamal accessory exec postgres -c config/database.yml --interactive --reuse \
+./bin/deploy database accessory boot postgres
+./bin/deploy database accessory exec postgres --reuse 'pg_isready -U postgres'
+./bin/deploy database accessory exec postgres --interactive --reuse \
   'bash /opt/postgres/provision.sh planningpoker'
 ```
 
@@ -72,7 +82,7 @@ Commit the implementation before deploying: Kamal builds the committed Git
 revision. Then run:
 
 ```sh
-kamal deploy
+./bin/deploy
 ```
 
 The application automatically creates its tables using its own credentials.
@@ -80,14 +90,14 @@ The application automatically creates its tables using its own credentials.
 ## Add another service
 
 ```sh
-kamal accessory exec postgres -c config/database.yml --interactive --reuse \
+./bin/deploy database accessory exec postgres --interactive --reuse \
   'bash /opt/postgres/provision.sh another_service'
 ```
 
 Give that service a connection URL with its own login, password, and database:
 
 ```text
-postgres://another_service:PASSWORD@deminworks-postgres:5432/another_service?sslmode=disable
+postgres://another_service:PASSWORD@YOUR_POSTGRES_CONTAINER:5432/another_service?sslmode=disable
 ```
 
 Use a lowercase service name containing only letters, digits, and underscores.
@@ -100,9 +110,9 @@ use its private address in their URLs; keep it off the public interface.
 ## Administration and backups
 
 ```sh
-kamal accessory details postgres -c config/database.yml
-kamal accessory logs postgres -c config/database.yml
-kamal accessory exec postgres -c config/database.yml --interactive --reuse \
+./bin/deploy database accessory details postgres
+./bin/deploy database accessory logs postgres
+./bin/deploy database accessory exec postgres --interactive --reuse \
   'psql -U postgres -d postgres'
 ```
 
@@ -113,14 +123,19 @@ Use `\password planningpoker` and update `DATABASE_URL` to rotate the app passwo
 Export a database backup through SSH without copying credentials into commands:
 
 ```sh
-ssh alex@deminworks 'docker exec deminworks-postgres pg_dump -U postgres -Fc planningpoker' \
-  > planningpoker.dump
+set -a
+. ./.env.deploy
+set +a
+ssh "${DEPLOY_SSH_USER}@${DEPLOY_HOST}" \
+  "docker exec ${DEPLOY_POSTGRES_CONTAINER} pg_dump -U postgres -Fc planningpoker" \
+  > /path/to/private/backups/planningpoker.dump
 ```
 
 Keep backups off the node and protect them as application data. A persistent
-volume preserves data across container replacement, but is not a backup. Before
-database upgrades, make and test a backup. A patch upgrade can use
-`kamal accessory reboot postgres -c config/database.yml` after changing the image
+volume preserves data across container replacement, but is not a backup. Keep
+dump files outside the repository. Before database upgrades, make and test a
+backup. A patch upgrade can use
+`./bin/deploy database accessory reboot postgres` after changing the image
 tag; it briefly interrupts all services using this server. A major version upgrade
 requires PostgreSQL's upgrade or dump/restore procedure, not just a new image tag.
 
@@ -128,9 +143,10 @@ To verify restoration without overwriting production, create a separate database
 from the admin console and restore into it:
 
 ```sh
-ssh alex@deminworks \
-  'docker exec -i deminworks-postgres pg_restore -U postgres --no-owner -d planningpoker_restore' \
-  < planningpoker.dump
+# With .env.deploy exported as in the backup example above:
+ssh "${DEPLOY_SSH_USER}@${DEPLOY_HOST}" \
+  "docker exec -i ${DEPLOY_POSTGRES_CONTAINER} pg_restore -U postgres --no-owner -d planningpoker_restore" \
+  < /path/to/private/backups/planningpoker.dump
 ```
 
 Do not run accessory removal or delete its volume as part of app cleanup.

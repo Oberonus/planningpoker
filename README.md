@@ -25,11 +25,14 @@ When the container is up and running, just visit the service at [http://localhos
 
 ## Deploy with Kamal
 
-Production runs at https://poker.deminworks.com on the `deminworks` VPS.
-The configuration is in `config/deploy.yml` and uses SSH as `alex` over Tailscale.
-Docker must be available to `alex` without sudo. On a new server, Kamal can
-install Docker automatically when run with root SSH access; otherwise install
-Docker and add `alex` to the `docker` group first, then reconnect.
+The live application is at https://poker.deminworks.com.
+Deployments run from an operator's computer using `./bin/deploy`; GitHub Actions
+only runs verification. The tracked Kamal configuration reads deployment details
+from environment variables, so production addresses and resource names stay local.
+
+The deployment SSH user needs Docker access without sudo. On a new server, Kamal
+can install Docker when run with root SSH access; otherwise install Docker and
+add the deployment user to the `docker` group first, then reconnect.
 
 Install Kamal globally with Ruby 3.2 or newer:
 
@@ -39,10 +42,26 @@ gem install kamal --version 2.12.0 --no-document
 rbenv rehash
 ```
 
-The `poker.deminworks.com` DNS record must point to `185.207.104.218`, with
-ports 80 and 443 reachable. For the simplest Let's Encrypt setup, use Cloudflare
-DNS-only mode. If enabling Cloudflare proxying afterward, use Full (strict)
-SSL/TLS mode and keep WebSockets enabled.
+Create the local deployment settings:
+
+```bash
+cp config/deploy.env.example .env.deploy
+chmod 600 .env.deploy
+```
+
+Edit `.env.deploy` with your SSH host/user, application domain, and shared database
+resource names. The wrapper loads this ignored file from the project root and
+exports its values before running Kamal. It is sourced as shell code, so keep it
+under your control and quote values as needed. If the file is absent, the same
+variables can be supplied through the exported environment.
+
+For an existing database, preserve its service, container, and volume names.
+Changing them can select a different container or empty volume. Keep private
+operator notes in `.kamal/operations.md`, which is also ignored, and back up the
+local configuration and secrets privately.
+
+Point the application domain at your server's public IP, with ports 80 and 443
+reachable. Keep the exact DNS and SSH details in your private operator notes.
 
 Before the first deployment with PostgreSQL, follow the
 [database setup guide](docs/postgres.md#initial-production-setup) to boot the shared
@@ -52,20 +71,20 @@ Run the first deployment from this directory while connected to Tailscale,
 with a local Docker engine running:
 
 ```bash
-kamal setup
+./bin/deploy setup
 ```
 
 For subsequent deployments and operations:
 
 ```bash
-kamal deploy
-kamal app details
-kamal app logs
-kamal rollback <previous-version>
+./bin/deploy
+./bin/deploy app details
+./bin/deploy app logs
+./bin/deploy rollback <previous-version>
 ```
 
 Kamal builds the committed Git revision for amd64. Commit deployment and
-application changes before running `kamal deploy`.
+application changes before running `./bin/deploy`.
 It runs a local registry on port 5555 and transfers images through SSH tunnels,
 so external registry credentials are unnecessary. The proxy serves HTTPS and
 checks `/alive` on application port 8080 before switching traffic.

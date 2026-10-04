@@ -1,12 +1,13 @@
+<% require "json" %>
 # This configuration owns the shared database server. Other applications only
 # reference its hostname; they must not redeclare or manage this accessory.
-service: deminworks-data
+service: <%= ENV.fetch("DEPLOY_DATABASE_SERVICE").to_json %>
 image: postgres
 minimum_version: 2.12.0
 servers:
-  - deminworks
+  - <%= ENV.fetch("DEPLOY_HOST").to_json %>
 ssh:
-  user: alex
+  user: <%= ENV.fetch("DEPLOY_SSH_USER").to_json %>
 registry:
   server: localhost:5555
 builder:
@@ -15,9 +16,9 @@ secrets_path: .kamal/database-secrets
 
 accessories:
   postgres:
-    service: deminworks-postgres
+    service: <%= ENV.fetch("DEPLOY_POSTGRES_CONTAINER").to_json %>
     image: postgres:18.6
-    host: deminworks
+    host: <%= ENV.fetch("DEPLOY_HOST").to_json %>
     # Same-host apps connect over the private 'kamal' Docker network.
     # Host access is restricted to loopback (use an SSH tunnel for administration).
     port: "127.0.0.1:5432:5432"
@@ -34,7 +35,7 @@ accessories:
     # PostgreSQL 18 stores data beneath /var/lib/postgresql/18/docker.
     # A stable named volume survives container replacement and app removal.
     volumes:
-      - deminworks-postgres-data:/var/lib/postgresql
+      - <%= "#{ENV.fetch('DEPLOY_POSTGRES_VOLUME')}:/var/lib/postgresql".to_json %>
     files:
       - config/postgres/provision.sh:/opt/postgres/provision.sh:ro
     options:

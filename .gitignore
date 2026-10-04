@@ -4,4 +4,6 @@ coverage.txt
 .docker
 .kamal/secrets*
 .kamal/database-secrets*
+.kamal/operations.md
 .env*
+*.dump
