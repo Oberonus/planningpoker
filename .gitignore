@@ -1,4 +1,5 @@
 coverage.txt
+coverage-*.txt
 .magefile
 .cache
 .docker

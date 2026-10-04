@@ -4,6 +4,7 @@ package async
 import (
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/url"
 
@@ -60,11 +61,10 @@ func NewAPI(repository gameService, authenticator userAuthenticator) *API {
 	}
 
 	go func() {
-		if err := p.server.Serve(); err != nil {
+		if err := p.server.Serve(); err != nil && !errors.Is(err, io.EOF) {
 			log.Fatalf("socketio listen error: %s\n", err)
 		}
 	}()
-	// defer server.Close()
 
 	p.server.OnConnect(rootNameSpace, p.onConnect)
 	p.server.OnDisconnect(rootNameSpace, p.onDisconnect)
@@ -81,6 +81,11 @@ func NewAPI(repository gameService, authenticator userAuthenticator) *API {
 	})
 
 	return p
+}
+
+// Close releases the Socket.IO listener and its connections.
+func (p *API) Close() error {
+	return p.server.Close()
 }
 
 // SetupRoutes sets up socket.io related routes.
