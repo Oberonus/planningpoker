@@ -1,99 +1,92 @@
 <template>
-  <v-dialog v-model="show" max-width="500px" persistent>
-    <v-card>
-      <v-card-title>
-        <span class="headline">Setup your game</span>
-      </v-card-title>
-      <v-divider></v-divider>
-      <v-card-text style="margin-top: 20px;">
-        <v-row>
-          <v-col cols="12">
-            <v-text-field v-model="name" label="Name of the game (optional)"></v-text-field>
-          </v-col>
-        </v-row>
-        <v-row>
-          <v-col cols="12">
-            <v-text-field v-model="url" label="Ticket URL (optional)"></v-text-field>
-          </v-col>
-        </v-row>
-        <v-row v-if="deck!==null" align="center">
-          <v-col cols="12">
-            <v-select
-                v-model="deck"
-                :items="decks"
-                :item-text="item => formatDeck(item)"
-                label="Card deck"
-                return-object
-            ></v-select>
-          </v-col>
-        </v-row>
-      </v-card-text>
-      <v-divider></v-divider>
-      <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn color="primary" text @click="save">OK</v-btn>
-        <v-btn color="primary" text @click="cancel">Cancel</v-btn>
-      </v-card-actions>
+  <v-dialog v-model="show" max-width="480px">
+    <v-card class="dialog-card" role="dialog" aria-modal="true" aria-labelledby="settings-dialog-title">
+      <v-form ref="settingsForm" @submit.prevent="save" @keydown.esc.native.stop.prevent="cancel">
+        <v-card-title id="settings-dialog-title" role="heading" aria-level="2">Game settings</v-card-title>
+        <v-card-text>
+          <p class="dialog-description">Update the game name or ticket link.</p>
+          <v-text-field
+            ref="gameNameInput"
+            v-model="name"
+            label="Game name (optional)"
+            placeholder="e.g. Sprint planning"
+            outlined
+            dense
+          ></v-text-field>
+          <v-text-field
+            v-model="url"
+            label="Ticket URL (optional)"
+            placeholder="https://"
+            :rules="urlRules"
+            outlined
+            dense
+          ></v-text-field>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn text @click="cancel">Cancel</v-btn>
+          <v-btn type="submit" color="primary" depressed>Save settings</v-btn>
+        </v-card-actions>
+      </v-form>
     </v-card>
   </v-dialog>
 </template>
 
 <script>
-import game from "@/models/game"
+import { ticketURLRules } from "@/models/validation"
 
 export default {
-  data: () => {
-    return {
-      modeCreate: 'create',
-      modeModify: 'modify',
-      mode: null,
-      show: false,
-      name: '',
-      url: '',
-      resolve: null,
-      deck: null,
-      decks: game.decks,
-    }
+  data: () => ({
+    show: false,
+    name: '',
+    url: '',
+    resolve: null,
+    urlRules: ticketURLRules,
+  }),
+
+  watch: {
+    show(visible) {
+      if (!visible && this.resolve) {
+        this.resolve([false, '', ''])
+        this.resolve = null
+      }
+    },
   },
 
   methods: {
-    async open() {
-      this.mode = this.modeCreate
-      this.name = ""
-      this.url = ""
+    openModify(name, url) {
+      this.name = name || ''
+      this.url = url || ''
       this.show = true
-      this.deck = this.decks[0]
 
-      return new Promise((resolve) => {
-        this.resolve = resolve
+      this.$nextTick(() => {
+        this.$refs.settingsForm.resetValidation()
+        // Wait for Vuetify's lazy dialog to finish moving focus.
+        requestAnimationFrame(() => {
+          if (this.show) {
+            this.$refs.gameNameInput.focus()
+          }
+        })
       })
-    },
 
-    async openModify(name, url) {
-      this.mode = this.modeModify
-      this.name = name
-      this.url = url
-      this.show = true
-      this.deck = null
-
-      return new Promise((resolve) => {
+      return new Promise(resolve => {
         this.resolve = resolve
       })
     },
 
     save() {
+      if (!this.$refs.settingsForm.validate()) {
+        return
+      }
+
+      this.resolve([true, this.name.trim(), this.url.trim()])
+      this.resolve = null
       this.show = false
-      this.resolve([true, this.name, this.url, this.deck])
     },
 
     cancel() {
       this.show = false
-      this.resolve([false, "", "", null])
     },
-
-    formatDeck(deck) {
-      return deck.name + " (" + deck.types.join(", ") + ")"
-    }
   },
 }
 </script>

@@ -1,21 +1,24 @@
 <template>
-  <v-dialog v-model="show" max-width="500px">
-    <v-card>
-      <v-card-title>
-        <span class="headline">Invite your teammates</span>
-      </v-card-title>
-      <v-divider></v-divider>
-      <v-card-text style="margin-top: 20px;">
-        <v-row>
-          <v-col cols="12">
-            <v-text-field ref="textToCopy" v-model="url" label="URL to copy" requred></v-text-field>
-          </v-col>
-        </v-row>
+  <v-dialog v-model="show" max-width="480px">
+    <v-card class="dialog-card" role="dialog" aria-modal="true" aria-labelledby="invite-dialog-title" @keydown.esc.native.stop.prevent="show = false">
+      <v-card-title id="invite-dialog-title" role="heading" aria-level="2">Invite your team</v-card-title>
+      <v-card-text>
+        <p class="dialog-description">Share this link so your teammates can join the game.</p>
+        <v-text-field
+          ref="textToCopy"
+          v-model="url"
+          label="Invitation link"
+          readonly
+          outlined
+          dense
+          @focus="selectLink"
+        ></v-text-field>
+        <p v-if="copyFailed" class="muted" role="status">Select the link and copy it with your keyboard or your device's copy menu.</p>
       </v-card-text>
-      <v-divider></v-divider>
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="primary" text @click="copy">Copy invitation link</v-btn>
+        <v-btn text @click="show = false">Close</v-btn>
+        <v-btn color="primary" depressed @click="copy">Copy link</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -23,35 +26,63 @@
 
 <script>
 export default {
-  data: () => {
-    return {
-      show: false,
-      url: '',
-      resolve: null,
-    }
+  data: () => ({
+    show: false,
+    url: '',
+    resolve: null,
+    copyFailed: false,
+  }),
+
+  watch: {
+    show(visible) {
+      if (!visible && this.resolve) {
+        this.resolve(false)
+        this.resolve = null
+      }
+    },
   },
 
   methods: {
-    async open(url) {
+    open(url) {
       this.url = url
+      this.copyFailed = false
       this.show = true
-
       this.$nextTick(() => {
-        let textToCopy = this.$refs.textToCopy.$el.querySelector('input')
-        textToCopy.select()
+        requestAnimationFrame(() => {
+          if (this.show) {
+            this.selectLink()
+          }
+        })
       })
 
-      return new Promise((resolve) => {
+      return new Promise(resolve => {
         this.resolve = resolve
       })
     },
 
+    selectLink() {
+      const input = this.$refs.textToCopy.$el.querySelector('input')
+      input.focus()
+      input.select()
+    },
+
     copy() {
-      let textToCopy = this.$refs.textToCopy.$el.querySelector('input')
-      textToCopy.select()
-      document.execCommand("copy");
+      this.selectLink()
+
+      try {
+        // Older browsers and non-secure local hosts need the selected-input fallback.
+        if (!document.execCommand('copy')) {
+          this.copyFailed = true
+          return
+        }
+      } catch (error) {
+        this.copyFailed = true
+        return
+      }
+
+      this.resolve(true)
+      this.resolve = null
       this.show = false
-      this.resolve()
     },
   },
 }

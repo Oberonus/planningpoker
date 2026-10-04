@@ -1,12 +1,19 @@
 <template>
-  <div class="card">
-    <div :class="cardClass" @click="$emit('click')" translate="no">
-      <div v-if="active && confidence==='high'" class="card-btn-active-label">!</div>
-      <div v-if="active && confidence==='low'" class="card-btn-active-label">?</div>
-      <div v-if="active && confidence==='normal'" class="card-btn-active-label"></div>
-      <div class="card-content">{{ value }}</div>
-    </div>
-  </div>
+  <button
+    type="button"
+    class="vote-card"
+    :class="{ 'vote-card-active': active }"
+    :aria-pressed="active"
+    :aria-label="`Vote ${value}${active ? ', selected' + confidenceDescription : ''}`"
+    :disabled="disabled"
+    :aria-disabled="disabled || busy"
+    translate="no"
+    @click="!busy && $emit('click')"
+  >
+    <span v-if="active" class="vote-card-confidence" aria-hidden="true">{{ confidence === 'high' ? '!' : confidence === 'low' ? '?' : '' }}</span>
+    <span class="vote-card-value">{{ value }}</span>
+    <span v-if="active" class="vote-card-indicator" aria-hidden="true">✓</span>
+  </button>
 </template>
 
 <script>
@@ -15,78 +22,95 @@ export default {
     active: Boolean,
     value: String,
     confidence: String,
-  },
-
-  data: () => {
-    return {}
+    disabled: Boolean,
+    busy: Boolean,
   },
 
   computed: {
-    cardClass() {
-      if (!this.active) {
-        return "card card-btn-inactive"
+    confidenceDescription() {
+      if (this.confidence === 'high') {
+        return ', very confident'
       }
-      return "card card-btn-active"
+
+      return this.confidence === 'low' ? ', not sure' : ''
     },
   },
-
-  methods: {},
 }
 </script>
 
-<style lang="stylus">
-.card
-  width: 3rem;
-  height: 5rem;
-  border-radius: .5rem;
-  font-size: 19px;
-
-  margin .4rem .4rem
-  display inline-block
-  position relative
-  vertical-align top
-  white-space nowrap
-  transition all .1s linear
-
-  outline: 0;
-  cursor: pointer;
-
-.card-content
-  display: flex;
+<style scoped>
+.vote-card {
+  display: inline-flex;
   align-items: center;
-  justify-content center;
-  flex-direction: column;
-  width: 2.7rem;
-  height: 5rem;
+  justify-content: center;
+  position: relative;
+  width: var(--vote-card-width, 56px);
+  height: var(--vote-card-height, 92px);
+  flex-shrink: 0;
+  border: 1px solid #bcbcbc;
+  border-radius: 12px;
+  background: var(--poker-surface);
+  color: var(--poker-text);
+  font: inherit;
+  font-size: 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transform: translateY(0);
+  transition:
+    transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 240ms ease,
+    border-color 180ms ease,
+    background 180ms ease;
+}
 
-.card-btn-inactive:hover
-  margin-top: -.005rem;
-  box-shadow: 0 3px 5px #888888;
-  transition all .1s linear
+@media (hover: hover) and (pointer: fine) {
+  .vote-card:hover:not(:disabled):not(.vote-card-active) {
+    border-color: var(--poker-accent);
+    background: var(--poker-accent-soft);
+    transform: translateY(-4px);
+    box-shadow: 0 3px 6px #00000018;
+  }
+}
 
-.card-btn-inactive
-  border: 2px solid #A0A0A0;
+.vote-card-active {
+  border: 2px solid var(--poker-accent);
+  background: var(--poker-surface);
+  transform: translateY(-6px);
+  box-shadow: 0 3px 6px #00000018;
+}
 
-.card-btn-active
-  border: 2px solid #13C29A;
-  margin-top: -.5rem;
+.vote-card-confidence {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 20px;
+  border-radius: 9px 9px 0 0;
+  background: var(--poker-accent);
+  color: var(--poker-on-accent);
+  font-size: 0.8rem;
+  line-height: 20px;
+  text-align: center;
+}
 
-.card-btn-active:hover
-  box-shadow: 0 3px 5px #888888;
-  transition all .1s linear
+.vote-card-indicator {
+  position: absolute;
+  right: 6px;
+  bottom: 4px;
+  color: var(--poker-accent-ink);
+  font-size: 0.7rem;
+}
 
-.card-btn-active-label
-  position absolute
-  top 0
-  left 0
-  width 100%
-  height 20px
-  border-top-left-radius .3rem
-  border-top-right-radius .3rem
-  background #13C29A
-  color white
-  font-size 13px
-  text-align center
-  font-weight bold
+.vote-card[aria-disabled="true"] {
+  cursor: wait;
+  opacity: 0.6;
+}
 
+@media (max-width: 600px) {
+  .vote-card {
+    width: 48px;
+    height: 80px;
+    font-size: 1.05rem;
+  }
+}
 </style>

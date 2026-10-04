@@ -16,12 +16,12 @@ export default {
         }
 
         try {
-            const rsp = await axios.get("me")
+            const rsp = await axios.get("me", {timeout: 10000})
             // actualize name
             this.name = rsp.data.name
         } catch (e) {
-            if (e.response.status === 401) {
-                const rsp = await axios.post("register", {name: this.name})
+            if (e.response && e.response.status === 401) {
+                const rsp = await axios.post("register", {name: this.name}, {timeout: 10000})
                 this.id = rsp.data.user_id
             } else {
                 throw e
@@ -35,7 +35,9 @@ export default {
     },
 
     async update(name) {
-        await axios.put("me", {name: name})
+        await axios.put("me", {name: name}, {timeout: 10000})
         this.name = name
+
+        ls.set('user_name', name)
     }
 }

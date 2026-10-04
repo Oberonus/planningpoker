@@ -1,70 +1,91 @@
 <template>
-  <v-dialog v-model="show" max-width="500px" persistent>
-    <v-card>
-      <v-card-title>
-        <span class="headline">Choose your name</span>
-      </v-card-title>
-      <v-divider></v-divider>
-      <v-card-text style="margin-top: 20px;">
-        <v-row>
-          <v-col cols="12">
-            <v-text-field v-model="name" label="Your display name" requred></v-text-field>
-          </v-col>
-        </v-row>
-      </v-card-text>
-      <v-divider></v-divider>
-      <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn color="primary" text @click="save" :disabled="name===''">OK</v-btn>
-        <v-btn v-if="mode===modeModify" color="primary" text @click="cancel">Cancel</v-btn>
-      </v-card-actions>
+  <v-dialog v-model="show" max-width="440px" :persistent="!modifying">
+    <v-card class="dialog-card" role="dialog" aria-modal="true" aria-labelledby="name-dialog-title">
+      <v-form ref="nameForm" @submit.prevent="save" @keydown.esc.native.stop.prevent="modifying && cancel()">
+        <v-card-title id="name-dialog-title" role="heading" aria-level="2">{{ modifying ? 'Your name' : 'Join game' }}</v-card-title>
+        <v-card-text>
+          <p class="dialog-description">{{ modifying ? 'Choose the name your teammates see.' : 'What should your teammates call you?' }}</p>
+          <v-text-field
+            ref="nameInput"
+            v-model="name"
+            label="Your name"
+            autocomplete="nickname"
+            :rules="nameRules"
+            outlined
+            dense
+          ></v-text-field>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn v-if="modifying" text @click="cancel">Cancel</v-btn>
+          <v-btn type="submit" color="primary" depressed>{{ modifying ? 'Save name' : 'Join game' }}</v-btn>
+        </v-card-actions>
+      </v-form>
     </v-card>
   </v-dialog>
 </template>
 
 <script>
 export default {
-  data: () => {
-    return {
-      modeCreate: 'create',
-      modeModify: 'modify',
-      mode: null,
-      show: false,
-      name: '',
-      resolve: null,
-    }
+  data: () => ({
+    modifying: false,
+    show: false,
+    name: '',
+    resolve: null,
+    nameRules: [value => !!value.trim() || 'Enter your name to join the game.'],
+  }),
+
+  watch: {
+    show(visible) {
+      if (!visible && this.resolve) {
+        this.resolve('')
+        this.resolve = null
+      }
+    },
   },
 
   methods: {
-    async open(name) {
-      this.mode = this.modeCreate
-      this.name = name
-      this.show = true
-
-      return new Promise((resolve) => {
-        this.resolve = resolve
-      })
+    open(name) {
+      return this.showDialog(name, false)
     },
 
-    async openModify(name) {
-      this.mode = this.modeModify
-      this.name = name
+    openModify(name) {
+      return this.showDialog(name, true)
+    },
+
+    showDialog(name, modifying) {
+      this.modifying = modifying
+      this.name = name || ''
       this.show = true
 
-      return new Promise((resolve) => {
+      this.$nextTick(() => {
+        this.$refs.nameForm.resetValidation()
+        // Vuetify focuses its lazy dialog content after two render ticks.
+        requestAnimationFrame(() => {
+          if (this.show) {
+            this.$refs.nameInput.focus()
+          }
+        })
+      })
+
+      return new Promise(resolve => {
         this.resolve = resolve
       })
     },
 
     save() {
+      if (!this.$refs.nameForm.validate()) {
+        return
+      }
+
+      this.resolve(this.name.trim())
+      this.resolve = null
       this.show = false
-      this.resolve(this.name)
     },
 
     cancel() {
       this.show = false
-      this.resolve("")
-    }
+    },
   },
 }
 </script>

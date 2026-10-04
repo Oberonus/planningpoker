@@ -1,19 +1,19 @@
-import game from "@/models/game";
-import notifier from "@/notifier/notifier";
+import game from "@/models/game"
+import notifier from "@/notifier/notifier"
 
 const stateRunning = 'started'
 const stateFinished = 'finished'
 
 export default class {
-    id;
-    name;
-    ticket_url;
-    state;
-    cards_deck;
-    players;
-    voted_card;
-    can_reveal;
-    confidence;
+    id = '';
+    name = '';
+    ticket_url = '';
+    state = '';
+    cards_deck = {name: '', cards: []};
+    players = [];
+    voted_card = '';
+    can_reveal = false;
+    confidence = 'normal';
 
     constructor(id) {
         this.id = id
@@ -21,10 +21,7 @@ export default class {
     }
 
     getCards() {
-        if (this.cards_deck) {
-            return this.cards_deck.cards
-        }
-        return []
+        return this.cards_deck.cards
     }
 
     isRunning() {
@@ -40,11 +37,11 @@ export default class {
     }
 
     canReveal() {
-        return this.can_reveal && this.state === stateRunning
+        return this.can_reveal && this.isRunning()
     }
 
     canRestart() {
-        return this.can_reveal && this.state === stateFinished
+        return this.can_reveal && this.isFinished()
     }
 
     isActive(card) {
@@ -52,34 +49,32 @@ export default class {
     }
 
     voted() {
-        return this.voted_card !== ""
+        return this.voted_card !== ''
     }
 
-    async reveal() {
-        await game.reveal(this.id)
+    reveal() {
+        return game.reveal(this.id)
     }
 
-    async restart() {
-        await game.restart(this.id)
+    restart() {
+        return game.restart(this.id)
     }
 
-    async vote(card) {
+    vote(card) {
         if (this.voted_card === card) {
-            this.voted_card = ""
-            await game.unVote(this.id)
-        } else {
-            card = encodeURIComponent(card)
-            this.voted_card = card
-            this.confidence = "normal"
-            await game.vote(this.id, card, this.confidence)
+            return game.unVote(this.id)
         }
+
+        // Selection and saved feedback follow the server's personalized state update.
+        return game.vote(this.id, card, 'normal')
     }
 
-    async changeConfidence(confidence) {
-        if (!this.voted_card || this.voted_card === "") {
+    changeConfidence(confidence) {
+        if (!this.voted()) {
             return
         }
-        await game.vote(this.id, this.voted_card, confidence)
+
+        return game.vote(this.id, this.voted_card, confidence)
     }
 
     stopUpdates() {
@@ -88,18 +83,13 @@ export default class {
 
     updateState(state) {
         for (const attribute in state) {
-            this[attribute] = state[attribute];
+            this[attribute] = state[attribute]
         }
-        this.players && this.players.sort(comparePlayers)
+
+        this.players.sort(comparePlayers)
     }
 }
 
-function comparePlayers(a, b) {
-    if (a.name < b.name) {
-        return -1;
-    }
-    if (a.name > b.name) {
-        return 1;
-    }
-    return 0;
+function comparePlayers(first, second) {
+    return first.name.localeCompare(second.name)
 }

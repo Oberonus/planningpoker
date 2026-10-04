@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
+  <title>Planning Poker</title>
+  <rect x="2" y="2" width="36" height="36" rx="8" fill="#16a382"/>
+  <path fill="#fff" fill-rule="evenodd" d="M12 10h9c5 0 8 2.8 8 7s-3 7-8 7h-5v6h-4V10zm4 4v6h5c2.5 0 4-1 4-3s-1.5-3-4-3h-5z"/>
+</svg>
