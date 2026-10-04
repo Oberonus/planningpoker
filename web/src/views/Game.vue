@@ -581,17 +581,22 @@ export default {
   color: var(--poker-muted);
   font-size: 0.8rem;
   font-weight: 500;
+  transition: opacity 180ms ease var(--pending-fade-delay, 0ms);
 }
 
-.confidence-options button:hover:not([aria-disabled="true"]),
+.confidence-options button:hover:not(:disabled),
 .confidence-options .confidence-selected {
   background: var(--poker-accent-soft);
   color: var(--poker-accent-ink);
 }
 
 .confidence-options button[aria-disabled="true"] {
-  opacity: 0.6;
   cursor: wait;
+}
+
+.confidence-options button[aria-disabled="true"]:not(:disabled) {
+  --pending-fade-delay: 300ms;
+  opacity: 0.6;
 }
 
 .confidence-options button:disabled {
